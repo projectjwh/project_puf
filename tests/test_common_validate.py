@@ -1,5 +1,7 @@
 """Tests for pipelines._common.validate."""
 
+from unittest.mock import patch
+
 import pandas as pd
 import pytest
 
@@ -156,3 +158,85 @@ class TestCheckRowCountDelta:
     def test_large_change(self, report):
         check_row_count_delta(100, 50, max_pct_change=0.10, report=report)
         assert not report.results[-1].passed
+
+
+# ---------------------------------------------------------------------------
+# Phase 2: Persistence and quarantine features
+# ---------------------------------------------------------------------------
+
+class TestValidationReportPersistence:
+    def test_run_id_defaults_to_none(self):
+        report = ValidationReport(source="test")
+        assert report.run_id is None
+
+    def test_run_id_can_be_set(self):
+        report = ValidationReport(source="test", run_id=42)
+        assert report.run_id == 42
+
+    def test_persist_noop_when_no_run_id(self):
+        """persist() should not raise when run_id is None."""
+        report = ValidationReport(source="test")
+        report.persist()  # should be a no-op
+
+    def test_persist_noop_when_negative_run_id(self):
+        """persist() should not raise when run_id is -1 (tracking disabled)."""
+        report = ValidationReport(source="test", run_id=-1)
+        report.persist()  # should be a no-op
+
+    def test_raise_if_blocked_persists_first(self):
+        """raise_if_blocked should call persist() before raising."""
+        from unittest.mock import patch
+
+        report = ValidationReport(source="test", run_id=42)
+        report.add(ValidationResult("r1", "BLOCK", False, message="fail"))
+
+        with patch.object(report, "persist") as mock_persist:
+            with pytest.raises(ValueError, match="BLOCKED"):
+                report.raise_if_blocked()
+            mock_persist.assert_called_once()
+
+
+class TestQuarantineMaskAccumulation:
+    def test_masks_accumulated_via_check_column_not_null(self):
+        df = pd.DataFrame({"npi": ["123", None, "456"]})
+        report = ValidationReport(source="test")
+        check_column_not_null(df, "npi", report)
+        assert "npi_not_null" in report._quarantine_masks
+        mask = report._quarantine_masks["npi_not_null"]
+        assert mask[1] is True or mask[1] == True  # noqa: E712
+        assert mask[0] is False or mask[0] == False  # noqa: E712
+
+    def test_masks_accumulated_via_check_column_format(self):
+        df = pd.DataFrame({"npi": ["1234567890", "BAD", "0987654321"]})
+        report = ValidationReport(source="test")
+        check_column_format(df, "npi", r"^\d{10}$", report)
+        assert "npi_format" in report._quarantine_masks
+        mask = report._quarantine_masks["npi_format"]
+        assert mask[1] == True  # noqa: E712
+        assert mask[0] == False  # noqa: E712
+
+    def test_masks_accumulated_via_check_value_set(self):
+        df = pd.DataFrame({"entity": ["1", "2", "X"]})
+        report = ValidationReport(source="test")
+        check_value_set(df, "entity", {"1", "2"}, report)
+        assert "entity_value_set" in report._quarantine_masks
+
+    def test_no_mask_when_check_passes(self):
+        df = pd.DataFrame({"npi": ["1234567890", "0987654321"]})
+        report = ValidationReport(source="test")
+        check_column_not_null(df, "npi", report)
+        assert len(report._quarantine_masks) == 0
+
+    def test_apply_quarantine_removes_bad_rows(self):
+        from pipelines._common.validate import apply_quarantine
+
+        df = pd.DataFrame({"npi": ["1234567890", None, "0987654321"]})
+        report = ValidationReport(source="test")
+        check_column_not_null(df, "npi", report)
+
+        with patch("pipelines._common.config.get_pipeline_settings") as mock_settings:
+            mock_settings.return_value.quarantine_enabled = True
+            clean = apply_quarantine(df, report, run_id=-1)
+
+        assert len(clean) == 2
+        assert None not in clean["npi"].values

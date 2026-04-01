@@ -274,73 +274,107 @@ def run(source_path: Path | None = None, run_date: date | None = None) -> dict[s
 
     Returns dict with row counts for each output.
     """
+    import time
+
+    from pipelines._common.catalog import (
+        complete_pipeline_run,
+        record_pipeline_failure,
+        record_pipeline_run,
+        update_data_freshness,
+    )
+    from pipelines._common.validate import apply_quarantine
+
     run_date = run_date or date.today()
     settings = get_pipeline_settings()
     source_def = get_source("nppes")
     results: dict[str, int] = {}
+    start_time = time.time()
+    file_hash = ""
 
-    log.info("nppes_pipeline_start", run_date=str(run_date))
+    run_id = record_pipeline_run("nppes", run_date, stage="acquire")
 
-    # 1. Acquire (or use provided source path)
-    if source_path:
-        csv_path = source_path
-    else:
-        landing = resolve_landing_path("nppes", run_date)
-        downloaded = download_file(source_def.url, landing)
-        validate_file_size_gb(downloaded, source_def.file_size.min_gb, source_def.file_size.max_gb)
-        file_hash = compute_hash(downloaded)
-        extract_zip(downloaded, landing)
-        # Find the main CSV (largest file)
-        csvs = list(landing.glob("*.csv"))
-        csv_path = max(csvs, key=lambda p: p.stat().st_size) if csvs else landing / "npidata.csv"
+    try:
+        log.info("nppes_pipeline_start", run_date=str(run_date))
 
-    log.info("reading_csv", path=str(csv_path))
+        # 1. Acquire (or use provided source path)
+        if source_path:
+            csv_path = source_path
+        else:
+            landing = resolve_landing_path("nppes", run_date)
+            downloaded = download_file(source_def.url, landing)
+            validate_file_size_gb(downloaded, source_def.file_size.min_gb, source_def.file_size.max_gb)
+            file_hash = compute_hash(downloaded)
+            extract_zip(downloaded, landing)
+            csvs = list(landing.glob("*.csv"))
+            csv_path = max(csvs, key=lambda p: p.stat().st_size) if csvs else landing / "npidata.csv"
 
-    # 2. Read (only core columns to save memory)
-    available_cols = pd.read_csv(csv_path, nrows=0, dtype=str).columns.tolist()
-    cols_to_read = [c for c in CORE_COLUMNS if c in available_cols]
+        log.info("reading_csv", path=str(csv_path))
 
-    df = pd.read_csv(csv_path, usecols=cols_to_read, dtype=str, low_memory=False)
-    log.info("csv_read", rows=len(df), columns=len(df.columns))
+        # 2. Read (only core columns to save memory)
+        available_cols = pd.read_csv(csv_path, nrows=0, dtype=str).columns.tolist()
+        cols_to_read = [c for c in CORE_COLUMNS if c in available_cols]
 
-    # Rename columns
-    df = df.rename(columns={k: v for k, v in COLUMN_MAPPING.items() if k in df.columns})
+        df = pd.read_csv(csv_path, usecols=cols_to_read, dtype=str, low_memory=False)
+        log.info("csv_read", rows=len(df), columns=len(df.columns))
 
-    # 3. Validate
-    report = validate_nppes(df)
-    report.raise_if_blocked()
-    log.info("validation_passed", warnings=len(report.warnings))
+        # Rename columns
+        df = df.rename(columns={k: v for k, v in COLUMN_MAPPING.items() if k in df.columns})
 
-    # 4. Transform
-    df = transform_nppes(df, run_date)
+        # 3. Validate
+        report = validate_nppes(df)
+        report.run_id = run_id
+        report.raise_if_blocked()
+        report.persist()
+        log.info("validation_passed", warnings=len(report.warnings))
 
-    # 5. Write Parquet — all NPIs
-    all_path = PROJECT_ROOT / settings.storage.processed_base / "nppes" / "nppes_all.parquet"
-    write_parquet(df, all_path)
-    results["nppes_all_parquet"] = len(df)
+        # Apply quarantine
+        df = apply_quarantine(df, report, run_id)
 
-    # 6. Write Parquet — active only
-    active_df = df[df["is_active"] == True].copy()  # noqa: E712
-    active_path = PROJECT_ROOT / settings.storage.processed_base / "nppes" / "nppes_active.parquet"
-    write_parquet(active_df, active_path)
-    results["nppes_active_parquet"] = len(active_df)
+        # 4. Transform
+        df = transform_nppes(df, run_date)
 
-    # 7. Load ref_providers to PostgreSQL (active providers only)
-    provider_cols = [c for c in REF_PROVIDER_COLUMNS if c in active_df.columns]
-    provider_df = active_df[provider_cols].copy()
-    rows = copy_dataframe_to_pg(provider_df, "ref_providers", "reference", if_exists="replace")
-    results["ref_providers"] = rows
+        # 5. Write Parquet — all NPIs
+        all_path = PROJECT_ROOT / settings.storage.processed_base / "nppes" / "nppes_all.parquet"
+        write_parquet(df, all_path)
+        results["nppes_all_parquet"] = len(df)
 
-    # 8. Build and load ref_provider_taxonomies
-    tax_df = build_taxonomy_table(active_df)
-    if not tax_df.empty:
-        rows = copy_dataframe_to_pg(tax_df, "ref_provider_taxonomies", "reference", if_exists="replace")
-        results["ref_provider_taxonomies"] = rows
+        # 6. Write Parquet — active only
+        active_df = df[df["is_active"] == True].copy()  # noqa: E712
+        active_path = PROJECT_ROOT / settings.storage.processed_base / "nppes" / "nppes_active.parquet"
+        write_parquet(active_df, active_path)
+        results["nppes_active_parquet"] = len(active_df)
 
-    # 9. Archive
-    archive_path = PROJECT_ROOT / settings.storage.archive_base / "nppes" / run_date.isoformat()
-    archive_path.mkdir(parents=True, exist_ok=True)
-    write_parquet(df, archive_path / "nppes_all.parquet")
+        # 7. Load ref_providers to PostgreSQL (active providers only)
+        provider_cols = [c for c in REF_PROVIDER_COLUMNS if c in active_df.columns]
+        provider_df = active_df[provider_cols].copy()
+        rows = copy_dataframe_to_pg(provider_df, "ref_providers", "reference", if_exists="replace")
+        results["ref_providers"] = rows
 
-    log.info("nppes_pipeline_complete", **results)
-    return results
+        # 8. Build and load ref_provider_taxonomies
+        tax_df = build_taxonomy_table(active_df)
+        if not tax_df.empty:
+            rows = copy_dataframe_to_pg(tax_df, "ref_provider_taxonomies", "reference", if_exists="replace")
+            results["ref_provider_taxonomies"] = rows
+
+        # 9. Archive
+        archive_path = PROJECT_ROOT / settings.storage.archive_base / "nppes" / run_date.isoformat()
+        archive_path.mkdir(parents=True, exist_ok=True)
+        write_parquet(df, archive_path / "nppes_all.parquet")
+
+        duration = time.time() - start_time
+        total_loaded = results.get("ref_providers", 0)
+        complete_pipeline_run(
+            run_id, "success", rows_processed=len(df),
+            rows_loaded=total_loaded, file_hash=file_hash, duration_seconds=duration,
+        )
+        update_data_freshness("nppes", file_hash=file_hash)
+
+        log.info("nppes_pipeline_complete", **results)
+        return results
+
+    except Exception as e:
+        duration = time.time() - start_time
+        complete_pipeline_run(run_id, "failed", error_message=str(e),
+                              duration_seconds=duration)
+        record_pipeline_failure(run_id, e)
+        raise

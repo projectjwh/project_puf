@@ -110,77 +110,108 @@ def run_reference_pipeline(
     Returns:
         Number of rows loaded.
     """
+    import time
+
+    from pipelines._common.catalog import (
+        complete_pipeline_run,
+        record_pipeline_failure,
+        record_pipeline_run,
+        update_data_freshness,
+    )
+
     run_date = run_date or date.today()
     source_def = get_source(config.source_name)
+    start_time = time.time()
+    file_hash = ""
 
-    log.info("pipeline_start", source=config.source_name, table=config.target_table)
+    run_id = record_pipeline_run(config.source_name, run_date, stage="acquire")
 
-    # 1. Acquire
-    if source_path:
-        data_file = source_path
-    else:
-        landing = resolve_landing_path(config.source_name, run_date)
+    try:
+        log.info("pipeline_start", source=config.source_name, table=config.target_table)
 
-        # Download
-        downloaded = download_file(source_def.url, landing)
+        # 1. Acquire
+        if source_path:
+            data_file = source_path
+        else:
+            landing = resolve_landing_path(config.source_name, run_date)
 
-        # Extract if archive
-        if source_def.format in ("csv_zip", "zip_txt", "zip_csv", "zip_xlsx"):
-            extract_zip(downloaded, landing)
+            # Download
+            downloaded = download_file(source_def.url, landing)
+            file_hash = compute_hash(downloaded)
 
-        # Find the data file
-        data_file = find_data_file(landing, config)
+            # Extract if archive
+            if source_def.format in ("csv_zip", "zip_txt", "zip_csv", "zip_xlsx"):
+                extract_zip(downloaded, landing)
 
-    log.info("reading_file", path=str(data_file))
+            # Find the data file
+            data_file = find_data_file(landing, config)
 
-    # 2. Read
-    df = read_source_file(data_file, config)
-    log.info("file_read", rows=len(df), columns=len(df.columns))
+        log.info("reading_file", path=str(data_file))
 
-    # 3. Validate
-    report = ValidationReport(source=config.source_name)
+        # 2. Read
+        df = read_source_file(data_file, config)
+        log.info("file_read", rows=len(df), columns=len(df.columns))
 
-    if config.required_source_columns:
-        check_required_columns(df, config.required_source_columns, report)
+        # 3. Validate
+        report = ValidationReport(source=config.source_name)
+        report.run_id = run_id
 
-    check_row_count(df, config.min_rows, config.max_rows, report, severity="WARN")
+        if config.required_source_columns:
+            check_required_columns(df, config.required_source_columns, report)
 
-    report.raise_if_blocked()
+        check_row_count(df, config.min_rows, config.max_rows, report, severity="WARN")
 
-    # 4. Transform
-    # Rename columns
-    if config.column_mapping:
-        existing_renames = {k: v for k, v in config.column_mapping.items() if k in df.columns}
-        df = df.rename(columns=existing_renames)
+        report.raise_if_blocked()
+        report.persist()
 
-    # Select columns
-    if config.select_columns:
-        available = [c for c in config.select_columns if c in df.columns]
-        df = df[available]
+        # 4. Transform
+        # Rename columns
+        if config.column_mapping:
+            existing_renames = {k: v for k, v in config.column_mapping.items() if k in df.columns}
+            df = df.rename(columns=existing_renames)
 
-    # Type casting
-    if config.type_map:
-        from pipelines._common.transform import cast_types
-        df = cast_types(df, config.type_map)
+        # Select columns
+        if config.select_columns:
+            available = [c for c in config.select_columns if c in df.columns]
+            df = df[available]
 
-    # Custom transform
-    if config.transform_fn:
-        df = config.transform_fn(df)
+        # Type casting
+        if config.type_map:
+            from pipelines._common.transform import cast_types
+            df = cast_types(df, config.type_map)
 
-    # Add metadata
-    df["_loaded_at"] = pd.Timestamp.now()
+        # Custom transform
+        if config.transform_fn:
+            df = config.transform_fn(df)
 
-    log.info("transform_complete", rows=len(df), columns=list(df.columns))
+        # Add metadata
+        df["_loaded_at"] = pd.Timestamp.now()
 
-    # 5. Load to PostgreSQL
-    rows_loaded = copy_dataframe_to_pg(
-        df, config.target_table, config.target_schema, if_exists="replace"
-    )
+        log.info("transform_complete", rows=len(df), columns=list(df.columns))
 
-    log.info(
-        "pipeline_complete",
-        source=config.source_name,
-        table=f"{config.target_schema}.{config.target_table}",
-        rows=rows_loaded,
-    )
-    return rows_loaded
+        # 5. Load to PostgreSQL
+        rows_loaded = copy_dataframe_to_pg(
+            df, config.target_table, config.target_schema, if_exists="replace"
+        )
+
+        duration = time.time() - start_time
+        complete_pipeline_run(
+            run_id, "success", rows_processed=len(df),
+            rows_loaded=rows_loaded, file_hash=file_hash, duration_seconds=duration,
+        )
+        update_data_freshness(config.source_name, file_hash=file_hash)
+
+        log.info(
+            "pipeline_complete",
+            source=config.source_name,
+            table=f"{config.target_schema}.{config.target_table}",
+            rows=rows_loaded,
+        )
+        return rows_loaded
+
+    except Exception as e:
+        duration = time.time() - start_time
+        complete_pipeline_run(run_id, "failed", error_message=str(e),
+                              duration_seconds=duration)
+        record_pipeline_failure(run_id, e)
+        raise

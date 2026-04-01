@@ -34,6 +34,8 @@ class ValidationReport:
 
     source: str
     results: list[ValidationResult] = field(default_factory=list)
+    run_id: int | None = None
+    _quarantine_masks: dict[str, Any] = field(default_factory=dict, repr=False)
 
     @property
     def passed(self) -> bool:
@@ -62,11 +64,81 @@ class ValidationReport:
                 message=result.message,
             )
 
+    def add_quarantine_mask(self, rule_name: str, mask: Any) -> None:
+        """Record a boolean mask of rows that failed a validation check.
+
+        Masks are accumulated and applied in a single pass via apply_quarantine().
+        """
+        self._quarantine_masks[rule_name] = mask
+
+    def persist(self) -> None:
+        """Persist all validation results to catalog.validation_runs.
+
+        No-op if run_id is not set or is negative (tracking disabled).
+        """
+        if self.run_id is None or self.run_id < 0:
+            return
+        from pipelines._common.catalog import persist_validation_report
+        persist_validation_report(self, self.run_id)
+
     def raise_if_blocked(self) -> None:
-        """Raise ValueError if any BLOCK-severity checks failed."""
+        """Raise ValueError if any BLOCK-severity checks failed.
+
+        Persists validation results before raising so blocked runs
+        still have their audit trail recorded.
+        """
         if not self.passed:
+            self.persist()
             failures = "; ".join(f"{r.rule_name}: {r.message}" for r in self.block_failures)
             raise ValueError(f"Validation BLOCKED for {self.source}: {failures}")
+
+
+# ---------------------------------------------------------------------------
+# Quarantine application
+# ---------------------------------------------------------------------------
+
+def apply_quarantine(
+    df: pd.DataFrame,
+    report: ValidationReport,
+    run_id: int = -1,
+) -> pd.DataFrame:
+    """Apply accumulated quarantine masks to remove failing rows.
+
+    For each mask in the report, moves failing rows to catalog.quarantine_rows
+    (if quarantine is enabled and run tracking is active), then returns the
+    clean DataFrame.
+
+    Masks are OR'd: a row quarantined by ANY rule is removed.
+    """
+    from pipelines._common.config import get_pipeline_settings
+
+    if not report._quarantine_masks:
+        return df
+
+    settings = get_pipeline_settings()
+    if not settings.quarantine_enabled:
+        return df
+
+    # Combine all masks with OR — any rule failure quarantines the row
+    combined_mask = pd.Series(False, index=df.index)
+    for mask in report._quarantine_masks.values():
+        combined_mask = combined_mask | mask.reindex(df.index, fill_value=False)
+
+    if not combined_mask.any():
+        return df
+
+    # Write quarantined rows per rule for granular tracking
+    from pipelines._common.catalog import write_quarantine_rows
+
+    clean_df = df
+    for rule_name, mask in report._quarantine_masks.items():
+        aligned_mask = mask.reindex(clean_df.index, fill_value=False)
+        if aligned_mask.any():
+            clean_df = write_quarantine_rows(
+                clean_df, aligned_mask, rule_name, run_id, report.source,
+            )
+
+    return clean_df
 
 
 # ---------------------------------------------------------------------------
@@ -88,7 +160,8 @@ def check_required_columns(df: pd.DataFrame, expected: list[str], report: Valida
 
 def check_column_not_null(df: pd.DataFrame, column: str, report: ValidationReport, severity: str = "BLOCK") -> None:
     """Verify a column has zero null values."""
-    null_count = int(df[column].isna().sum())
+    null_mask = df[column].isna()
+    null_count = int(null_mask.sum())
     report.add(ValidationResult(
         rule_name=f"{column}_not_null",
         severity=severity,
@@ -98,6 +171,8 @@ def check_column_not_null(df: pd.DataFrame, column: str, report: ValidationRepor
         message=f"{null_count:,} null values in {column}" if null_count > 0 else "",
         rows_affected=null_count,
     ))
+    if null_count > 0:
+        report.add_quarantine_mask(f"{column}_not_null", null_mask)
 
 
 def check_column_format(
@@ -112,7 +187,8 @@ def check_column_format(
     if len(non_null) == 0:
         return  # Nothing to check
     regex = re.compile(pattern)
-    invalid = non_null[~non_null.str.match(regex)]
+    invalid_mask_partial = ~non_null.str.match(regex)
+    invalid = non_null[invalid_mask_partial]
     report.add(ValidationResult(
         rule_name=f"{column}_format",
         severity=severity,
@@ -122,6 +198,11 @@ def check_column_format(
         message=f"{len(invalid):,} rows don't match {pattern}" if len(invalid) > 0 else "",
         rows_affected=len(invalid),
     ))
+    if len(invalid) > 0:
+        # Build full-index mask (False for null rows, True for format failures)
+        full_mask = pd.Series(False, index=df.index)
+        full_mask.loc[invalid.index] = True
+        report.add_quarantine_mask(f"{column}_format", full_mask)
 
 
 def check_uniqueness(df: pd.DataFrame, columns: list[str], report: ValidationReport, severity: str = "BLOCK") -> None:
@@ -168,7 +249,8 @@ def check_value_set(
 ) -> None:
     """Verify all non-null values in a column are in the allowed set."""
     non_null = df[column].dropna()
-    invalid = non_null[~non_null.isin(allowed_values)]
+    invalid_mask_partial = ~non_null.isin(allowed_values)
+    invalid = non_null[invalid_mask_partial]
     unique_invalid = set(invalid.unique())
     report.add(ValidationResult(
         rule_name=f"{column}_value_set",
@@ -179,6 +261,10 @@ def check_value_set(
         message=f"{len(invalid):,} rows with invalid values: {sorted(unique_invalid)[:5]}" if invalid.any() else "",
         rows_affected=len(invalid),
     ))
+    if len(invalid) > 0:
+        full_mask = pd.Series(False, index=df.index)
+        full_mask.loc[invalid.index] = True
+        report.add_quarantine_mask(f"{column}_value_set", full_mask)
 
 
 def check_null_rate(
@@ -242,7 +328,8 @@ def check_referential_integrity(
     """Check that values in column exist in a reference table at a minimum rate."""
     non_null = df[column].dropna()
     ref_values = set(reference_df[ref_column].dropna())
-    matched = non_null.isin(ref_values).sum()
+    match_mask = non_null.isin(ref_values)
+    matched = match_mask.sum()
     match_rate = int(matched) / len(non_null) if len(non_null) > 0 else 1.0
     unmatched = len(non_null) - int(matched)
     report.add(ValidationResult(
@@ -254,6 +341,11 @@ def check_referential_integrity(
         message=f"{unmatched:,} unmatched {column} values ({match_rate:.2%} match rate)" if match_rate < min_match_rate else "",
         rows_affected=unmatched,
     ))
+    if match_rate < min_match_rate:
+        full_mask = pd.Series(False, index=df.index)
+        unmatched_idx = non_null[~match_mask].index
+        full_mask.loc[unmatched_idx] = True
+        report.add_quarantine_mask(f"{column}_referential_integrity", full_mask)
 
 
 def check_row_count_delta(
