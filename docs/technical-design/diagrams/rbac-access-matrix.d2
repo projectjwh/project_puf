@@ -1,0 +1,84 @@
+# RBAC Access Matrix — 4 roles × 7 schemas
+# Visual grid: green=CRUD, blue=SELECT, gray=no access
+
+direction: down
+
+title: "PostgreSQL RBAC — Least Privilege Model" {
+  shape: text
+  style.font-size: 20
+}
+
+matrix: "" {
+  style.fill: "#ffffff"
+
+  # Column headers (roles)
+  header_pipeline: puf_pipeline {
+    style.fill: "#dbeafe"
+    style.stroke: "#2563eb"
+    style.font-size: 14
+  }
+  header_dbt: puf_dbt {
+    style.fill: "#dbeafe"
+    style.stroke: "#2563eb"
+    style.font-size: 14
+  }
+  header_api: puf_api {
+    style.fill: "#dbeafe"
+    style.stroke: "#2563eb"
+    style.font-size: 14
+  }
+  header_admin: puf_admin {
+    style.fill: "#dbeafe"
+    style.stroke: "#2563eb"
+    style.font-size: 14
+  }
+
+  # catalog row
+  catalog_pipeline: "CRUD" {style.fill: "#bbf7d0"; style.stroke: "#16a34a"}
+  catalog_dbt: "SELECT" {style.fill: "#bfdbfe"; style.stroke: "#3b82f6"}
+  catalog_api: "SELECT" {style.fill: "#bfdbfe"; style.stroke: "#3b82f6"}
+  catalog_admin: "ALL" {style.fill: "#bbf7d0"; style.stroke: "#16a34a"}
+
+  # reference row
+  ref_pipeline: "CRUD" {style.fill: "#bbf7d0"; style.stroke: "#16a34a"}
+  ref_dbt: "SELECT" {style.fill: "#bfdbfe"; style.stroke: "#3b82f6"}
+  ref_api: "SELECT" {style.fill: "#bfdbfe"; style.stroke: "#3b82f6"}
+  ref_admin: "ALL" {style.fill: "#bbf7d0"; style.stroke: "#16a34a"}
+
+  # staging row
+  staging_pipeline: "CRUD" {style.fill: "#bbf7d0"; style.stroke: "#16a34a"}
+  staging_dbt: "CRUD" {style.fill: "#bbf7d0"; style.stroke: "#16a34a"}
+  staging_api: "—" {style.fill: "#e2e8f0"; style.stroke: "#94a3b8"}
+  staging_admin: "ALL" {style.fill: "#bbf7d0"; style.stroke: "#16a34a"}
+
+  # intermediate row
+  int_pipeline: "—" {style.fill: "#e2e8f0"; style.stroke: "#94a3b8"}
+  int_dbt: "CRUD" {style.fill: "#bbf7d0"; style.stroke: "#16a34a"}
+  int_api: "—" {style.fill: "#e2e8f0"; style.stroke: "#94a3b8"}
+  int_admin: "ALL" {style.fill: "#bbf7d0"; style.stroke: "#16a34a"}
+
+  # mart row
+  mart_pipeline: "—" {style.fill: "#e2e8f0"; style.stroke: "#94a3b8"}
+  mart_dbt: "CRUD" {style.fill: "#bbf7d0"; style.stroke: "#16a34a"}
+  mart_api: "SELECT" {style.fill: "#bfdbfe"; style.stroke: "#3b82f6"}
+  mart_admin: "ALL" {style.fill: "#bbf7d0"; style.stroke: "#16a34a"}
+
+  # metadata row
+  meta_pipeline: "—" {style.fill: "#e2e8f0"; style.stroke: "#94a3b8"}
+  meta_dbt: "—" {style.fill: "#e2e8f0"; style.stroke: "#94a3b8"}
+  meta_api: "—" {style.fill: "#e2e8f0"; style.stroke: "#94a3b8"}
+  meta_admin: "ALL" {style.fill: "#bbf7d0"; style.stroke: "#16a34a"}
+
+  # raw row
+  raw_pipeline: "—" {style.fill: "#e2e8f0"; style.stroke: "#94a3b8"}
+  raw_dbt: "—" {style.fill: "#e2e8f0"; style.stroke: "#94a3b8"}
+  raw_api: "—" {style.fill: "#e2e8f0"; style.stroke: "#94a3b8"}
+  raw_admin: "ALL" {style.fill: "#bbf7d0"; style.stroke: "#16a34a"}
+}
+
+legend: "Legend" {
+  style.fill: "#f8fafc"
+  crud: "Green = CRUD (full access)" {style.fill: "#bbf7d0"}
+  select: "Blue = SELECT (read-only)" {style.fill: "#bfdbfe"}
+  none: "Gray = No access" {style.fill: "#e2e8f0"}
+}

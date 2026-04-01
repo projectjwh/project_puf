@@ -1,0 +1,33 @@
+version: 2
+
+models:
+  - name: mart_geographic__spending_variation
+    description: >
+      State-level spending variation with national benchmarks and provider supply.
+      One row per state per data_year. Includes spending indices and MA penetration.
+    columns:
+      - name: state_fips
+        data_tests:
+          - not_null
+      - name: data_year
+        data_tests:
+          - not_null
+      - name: spending_index
+        description: "State actual per-capita / national actual per-capita"
+      - name: providers_per_1000_benes
+        description: "Provider count per 1000 Medicare beneficiaries"
+
+  - name: mart_geographic__by_state
+    description: >
+      Lightweight state summary combining spending, providers, and prescribing.
+      One row per state per data_year.
+    columns:
+      - name: state_fips
+        data_tests:
+          - not_null
+      - name: data_year
+        data_tests:
+          - not_null
+      - name: state_abbreviation
+        data_tests:
+          - not_null

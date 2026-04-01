@@ -1,0 +1,87 @@
+# API Route Tree — /api/v1/ hierarchy
+# 9 domain prefixes → 28 endpoints with HTTP method badges
+
+direction: right
+
+root: "/api/v1" {
+  style.fill: "#f0f9ff"
+  style.stroke: "#0284c7"
+  style.stroke-width: 2
+
+  health: "/health" {
+    style.fill: "#bbf7d0"
+    get: "GET → HealthResponse\n(pg_connected, duckdb_connected)"
+  }
+
+  providers: "/providers" {
+    style.fill: "#dbeafe"
+    style.stroke: "#3b82f6"
+    list: "GET / → ProviderSearchResponse\n(state, specialty, name, page)"
+    npi: "GET /{npi} → ProviderProfile\n(10-digit NPI lookup)"
+    specialty: "GET /by-specialty/{specialty}\n→ list[ProviderSummary]"
+  }
+
+  geographic: "/geographic" {
+    style.fill: "#dcfce7"
+    style.stroke: "#22c55e"
+    spending: "GET /spending → list[StateSpending]\n(data_year, region)"
+    states: "GET /states → list[StateSummary]\n(data_year)"
+    state: "GET /states/{state_fips}\n→ list[StateSpending]"
+  }
+
+  national: "/national" {
+    style.fill: "#dcfce7"
+    style.stroke: "#22c55e"
+    kpis: "GET /kpis → list[NationalKPI]"
+    kpi_year: "GET /kpis/{data_year}\n→ NationalKPI"
+  }
+
+  opioid: "/opioid" {
+    style.fill: "#fecaca"
+    style.stroke: "#ef4444"
+    by_state: "GET /by-state → list[OpioidByState]\n(data_year)"
+    top_rx: "GET /top-prescribers\n→ list[OpioidTopPrescriber]"
+    state: "GET /by-state/{state_fips}\n→ list[OpioidByState]"
+  }
+
+  specialties: "/specialties" {
+    style.fill: "#e0e7ff"
+    style.stroke: "#6366f1"
+    list: "GET / → list[SpecialtySummary]\n(min_providers)"
+    detail: "GET /{specialty}\n→ SpecialtyDetail"
+  }
+
+  catalog: "/catalog" {
+    style.fill: "#fef3c7"
+    style.stroke: "#f59e0b"
+    sources: "GET /sources → list[CatalogSource]"
+    freshness: "GET /freshness → list[dict]"
+  }
+
+  hospitals: "/hospitals" {
+    style.fill: "#fed7aa"
+    style.stroke: "#f97316"
+    financial: "GET /financial → list[HospitalFinancialProfile]\n(data_year, state, limit)"
+    fin_ccn: "GET /financial/{ccn}\n→ HospitalFinancialProfile"
+    perf: "GET /performance\n→ list[HospitalPerformance]"
+    readm: "GET /readmissions\n→ list[HospitalReadmission]"
+    charges: "GET /charges\n→ list[HospitalChargeVariation]"
+  }
+
+  drugs: "/drugs" {
+    style.fill: "#e9d5ff"
+    style.stroke: "#7c3aed"
+    med_util: "GET /medicaid-utilization\n→ list[MedicaidDrugUtilization]"
+    price: "GET /price-trends\n→ list[DrugPriceTrend]"
+    price_hcpcs: "GET /price-trends/{hcpcs_code}\n→ list[DrugPriceTrend]"
+  }
+
+  postacute: "/postacute" {
+    style.fill: "#ccfbf1"
+    style.stroke: "#14b8a6"
+    snf: "GET /snf → list[SNFQuality]\n(state, min_rating, limit)"
+    snf_ccn: "GET /snf/{ccn} → SNFQuality"
+    hha: "GET /hha → list[HHAQuality]"
+    hospice: "GET /hospice → list[HospiceQuality]"
+  }
+}

@@ -1,0 +1,53 @@
+name: project_puf
+version: '0.1.0'
+config-version: 2
+
+profile: project_puf
+
+model-paths: ["."]
+test-paths: ["."]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+target-path: "target"
+clean-targets: ["target", "dbt_packages"]
+
+models:
+  project_puf:
+    staging:
+      +schema: staging
+      +materialized: view
+      cms:
+        +tags: ["cms", "staging"]
+    intermediate:
+      +schema: intermediate
+      +materialized: table
+      +tags: ["intermediate"]
+    marts:
+      +schema: mart
+      +materialized: table
+      +tags: ["mart"]
+      provider:
+        +tags: ["provider"]
+      reference:
+        +tags: ["reference"]
+      geographic:
+        +tags: ["geographic"]
+      national:
+        +tags: ["national"]
+      opioid:
+        +tags: ["opioid"]
+      hospital:
+        +tags: ["hospital"]
+      drug:
+        +tags: ["drug"]
+      postacute:
+        +tags: ["postacute"]
+      ma:
+        +tags: ["medicare_advantage"]
+      quality:
+        +tags: ["quality"]
+
+vars:
+  # Default to most recent 3 years
+  min_data_year: 2020
+  max_data_year: 2022

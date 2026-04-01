@@ -1,0 +1,83 @@
+version: 2
+
+models:
+  - name: int_providers
+    description: >
+      Enriched provider dimension. Joins taxonomy descriptions and geographic context
+      to create a complete provider profile. Active providers only.
+    columns:
+      - name: npi
+        description: "10-digit National Provider Identifier"
+        data_tests:
+          - unique
+          - not_null
+      - name: display_name
+        data_tests:
+          - not_null
+      - name: specialty_classification
+        description: "NUCC classification (e.g., Internal Medicine, Family Medicine)"
+      - name: state_name
+        description: "Full state name from FIPS lookup"
+      - name: census_region
+        description: "Census region (Northeast, Midwest, South, West)"
+
+  - name: int_hospital_financials
+    description: >
+      Hospital financial metrics from cost reports. Derives operating margin,
+      cost-to-charge ratio, and occupancy rate. Enabled after cost report staging exists.
+
+  - name: int_provider_services
+    description: >
+      Provider-level Part B service summary. Aggregates from service-line to provider-year.
+      Uses TOTALS (not averages) for proper aggregation. Service mix categorization.
+    columns:
+      - name: rendering_npi
+        description: "10-digit NPI"
+        data_tests:
+          - not_null
+      - name: data_year
+        data_tests:
+          - not_null
+      - name: total_medicare_payments
+        description: "Sum of all Medicare payments for this provider-year"
+      - name: total_services
+        description: "Total number of services rendered"
+      - name: em_services_pct
+        description: "Percentage of services that are E&M"
+
+  - name: int_provider_prescriptions
+    description: >
+      Provider-level Part D prescribing summary. Aggregates drug-level to provider-year.
+      Derives opioid metrics, brand/generic split, cost-per-claim.
+    columns:
+      - name: prescriber_npi
+        description: "10-digit NPI"
+        data_tests:
+          - not_null
+      - name: data_year
+        data_tests:
+          - not_null
+      - name: opioid_claim_rate_pct
+        description: "Percentage of total claims that are for opioids"
+      - name: has_opioid_prescriptions
+        description: "True if any opioid claims"
+      - name: is_high_opioid_prescriber
+        description: "True if >20% of claims are opioids"
+
+  - name: int_geographic_benchmarks
+    description: >
+      State-level geographic spending and utilization benchmarks.
+      Computes spending indices relative to national average.
+      Joins state names and census regions.
+    columns:
+      - name: state_fips
+        description: "2-digit state FIPS code"
+        data_tests:
+          - not_null
+      - name: data_year
+        data_tests:
+          - not_null
+      - name: spending_index
+        description: "State actual per-capita / national actual per-capita"
+      - name: standardized_spending_index
+        description: "State standardized per-capita / national standardized per-capita"

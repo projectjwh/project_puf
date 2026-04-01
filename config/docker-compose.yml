@@ -1,0 +1,133 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: puf-postgres
+    environment:
+      POSTGRES_DB: puf
+      POSTGRES_USER: puf_admin
+      POSTGRES_PASSWORD: ${PUF_DB_PASSWORD:-puf_dev_password}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U puf_admin -d puf"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    shm_size: 256mb
+    command: >
+      postgres
+        -c shared_buffers=512MB
+        -c effective_cache_size=1GB
+        -c work_mem=64MB
+        -c maintenance_work_mem=256MB
+        -c max_connections=200
+        -c wal_buffers=16MB
+        -c random_page_cost=1.1
+        -c effective_io_concurrency=200
+        -c max_wal_size=2GB
+        -c checkpoint_completion_target=0.9
+
+  pgbouncer:
+    image: bitnami/pgbouncer:latest
+    container_name: puf-pgbouncer
+    environment:
+      POSTGRESQL_HOST: postgres
+      POSTGRESQL_PORT: 5432
+      POSTGRESQL_USERNAME: puf_admin
+      POSTGRESQL_PASSWORD: ${PUF_DB_PASSWORD:-puf_dev_password}
+      POSTGRESQL_DATABASE: puf
+      PGBOUNCER_POOL_MODE: transaction
+      PGBOUNCER_MAX_CLIENT_CONN: 200
+      PGBOUNCER_DEFAULT_POOL_SIZE: 20
+      PGBOUNCER_MIN_POOL_SIZE: 5
+    ports:
+      - "6432:6432"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h localhost -p 6432"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  prefect-server:
+    image: prefecthq/prefect:3-latest
+    container_name: puf-prefect-server
+    command: prefect server start --host 0.0.0.0
+    environment:
+      PREFECT_SERVER_API_HOST: 0.0.0.0
+      PREFECT_API_DATABASE_CONNECTION_URL: postgresql+asyncpg://puf_admin:${PUF_DB_PASSWORD:-puf_dev_password}@postgres:5432/puf
+    ports:
+      - "4200:4200"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python -c 'import httpx; httpx.get(\"http://localhost:4200/api/health\").raise_for_status()'"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  prefect-worker:
+    image: prefecthq/prefect:3-latest
+    container_name: puf-prefect-worker
+    command: prefect worker start --pool default-agent-pool --type process
+    environment:
+      PREFECT_API_URL: http://prefect-server:4200/api
+    volumes:
+      - ../:/app
+    working_dir: /app
+    depends_on:
+      prefect-server:
+        condition: service_healthy
+    restart: unless-stopped
+
+  api:
+    build:
+      context: ..
+      dockerfile: config/Dockerfile.api
+    container_name: puf-api
+    environment:
+      PUF_DB_HOST: postgres
+      PUF_DB_PORT: "5432"
+      PUF_DB_NAME: puf
+      PUF_DB_USER: puf_api
+      PUF_DB_PASSWORD: ${PUF_DB_PASSWORD:-puf_dev_password}
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../data:/app/data:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python -c 'import httpx; httpx.get(\"http://localhost:8000/health\").raise_for_status()'"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    container_name: puf-frontend
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000/api/v1
+    ports:
+      - "3000:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+    driver: local

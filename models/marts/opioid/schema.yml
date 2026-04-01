@@ -1,0 +1,34 @@
+version: 2
+
+models:
+  - name: mart_opioid__by_state
+    description: >
+      State-level opioid prescribing metrics for the Opioid Monitor dashboard.
+      One row per state per data_year.
+    columns:
+      - name: state_fips
+        data_tests:
+          - not_null
+      - name: data_year
+        data_tests:
+          - not_null
+      - name: opioid_prescriber_rate_pct
+        description: "Percentage of prescribers with any opioid claims"
+      - name: opioid_claim_share_pct
+        description: "Opioid claims as percentage of all Rx claims"
+
+  - name: mart_opioid__top_prescribers
+    description: >
+      Individual opioid prescribers with provider identity and ranking.
+      One row per prescriber per data_year. Ranked within state.
+    columns:
+      - name: prescriber_npi
+        data_tests:
+          - not_null
+      - name: data_year
+        data_tests:
+          - not_null
+      - name: opioid_claims
+        description: "Total opioid claims for this prescriber-year"
+      - name: state_opioid_rank
+        description: "Rank within state by opioid claim volume"

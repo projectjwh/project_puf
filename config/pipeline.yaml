@@ -1,0 +1,51 @@
+# Pipeline Configuration
+# Global settings for data acquisition, validation, and transformation
+
+acquisition:
+  retry:
+    max_attempts: 3
+    delay_seconds: [300, 900, 2700]  # 5min, 15min, 45min
+  timeout_seconds: 3600  # 1 hour max per download
+  user_agent: "ProjectPUF/0.1 (public-healthcare-data-research)"
+  chunk_size_bytes: 8388608  # 8 MB download chunks
+  hash_algorithm: sha256
+
+validation:
+  # Severity levels: BLOCK (stops pipeline), WARN (logs + continues), INFO (logs only)
+  default_severity: WARN
+  # If true, store failing rows in catalog.quarantine_rows
+  quarantine_enabled: true
+  # Maximum percentage of rows that can fail WARN rules before escalating to BLOCK
+  warn_escalation_threshold: 0.10  # 10%
+
+transformation:
+  parquet:
+    compression: zstd
+    row_group_size: 500000
+  # Standard type mappings
+  type_standards:
+    npi: "VARCHAR(10)"
+    hcpcs: "VARCHAR(5)"
+    fips_state: "VARCHAR(2)"
+    fips_county: "VARCHAR(5)"
+    money: "DECIMAL(18,2)"
+    rate: "DECIMAL(7,4)"
+
+storage:
+  raw_base: data/raw
+  processed_base: data/processed
+  mart_base: data/mart
+  archive_base: data/archive
+  reference_base: data/reference
+
+logging:
+  level: INFO
+  format: json  # structlog JSON output
+  # Log to both stdout and file
+  file_path: logs/pipeline.log
+  # Include these fields in every log entry
+  context_fields:
+    - source
+    - data_year
+    - run_id
+    - stage  # acquire, validate, transform, load

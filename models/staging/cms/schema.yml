@@ -1,0 +1,89 @@
+version: 2
+
+models:
+  - name: stg_cms__nppes
+    description: >
+      Staging view over NPPES provider data. One row per NPI.
+      Schema contract: downstream models depend on these column names.
+    columns:
+      - name: npi
+        description: "10-digit National Provider Identifier"
+        data_tests:
+          - unique
+          - not_null
+      - name: entity_type_code
+        description: "1=Individual, 2=Organization"
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['1', '2']
+      - name: display_name
+        description: "Derived: LAST, FIRST CREDENTIAL for individuals; org name for organizations"
+        data_tests:
+          - not_null
+      - name: practice_state
+        description: "2-letter state abbreviation"
+      - name: practice_zip5
+        description: "5-digit ZIP code extracted from ZIP+4"
+      - name: primary_taxonomy_code
+        description: "NUCC taxonomy code from primary switch slot"
+      - name: is_active
+        description: "True if no deactivation_date"
+        data_tests:
+          - not_null
+
+  - name: stg_cms__pos_facilities
+    description: >
+      Staging view over Provider of Services facility data. One row per CCN.
+    columns:
+      - name: ccn
+        description: "6-digit CMS Certification Number"
+        data_tests:
+          - unique
+          - not_null
+      - name: facility_name
+        data_tests:
+          - not_null
+      - name: is_active
+        description: "True if no termination_date"
+
+  - name: stg_cms__part_b_utilization
+    description: >
+      Part B utilization staging. Ephemeral ref over pipeline-loaded partitioned table.
+      Grain: rendering_npi × hcpcs_code × place_of_service × data_year.
+      CRITICAL: total_* columns are derived from avg_* × number_of_services in pipeline.
+    columns:
+      - name: rendering_npi
+        description: "10-digit NPI of the rendering provider"
+      - name: hcpcs_code
+        description: "HCPCS/CPT code"
+      - name: total_medicare_payment
+        description: "Derived total = avg_medicare_payment × number_of_services"
+      - name: data_year
+        description: "Year of the data"
+
+  - name: stg_cms__part_d_prescribers
+    description: >
+      Part D prescriber staging. Ephemeral ref over pipeline-loaded partitioned table.
+      Grain: prescriber_npi × drug_name × data_year.
+    columns:
+      - name: prescriber_npi
+        description: "10-digit NPI of the prescriber"
+      - name: drug_name
+        description: "Brand name of the drug"
+      - name: is_opioid
+        description: "True if drug is an opioid"
+      - name: data_year
+        description: "Year of the data"
+
+  - name: stg_cms__geographic_variation
+    description: >
+      Geographic Variation staging. Ephemeral ref over pipeline-loaded table.
+      Grain: bene_geo_lvl × state/county_fips × data_year.
+    columns:
+      - name: bene_geo_lvl
+        description: "Geography level: State, County, or National"
+      - name: state_fips
+        description: "2-digit state FIPS code"
+      - name: data_year
+        description: "Year of the data"

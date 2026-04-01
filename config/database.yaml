@@ -1,0 +1,60 @@
+# PostgreSQL Database Configuration
+# Used by: Alembic migrations, pipeline utilities, FastAPI, dbt
+
+postgresql:
+  host: ${PUF_DB_HOST:-localhost}
+  port: ${PUF_DB_PORT:-5432}
+  database: ${PUF_DB_NAME:-puf}
+  # Connection through PgBouncer for application use
+  pgbouncer_port: ${PUF_PGBOUNCER_PORT:-6432}
+
+schemas:
+  - catalog      # Pipeline metadata, governance, lineage
+  - reference    # Shared code lookups, dimensions
+  - staging      # 1:1 source mirrors (dbt-managed)
+  - intermediate # Business logic, derived metrics (dbt-managed)
+  - mart         # Pre-aggregated, API-ready (dbt-managed)
+  - metadata     # Alembic version, dbt run log
+  - raw          # Reserved for future use
+
+roles:
+  puf_pipeline:
+    description: "Pipeline execution — CRUD on staging/reference/catalog"
+    grants:
+      - schema: catalog
+        privileges: [SELECT, INSERT, UPDATE, DELETE]
+      - schema: reference
+        privileges: [SELECT, INSERT, UPDATE, DELETE]
+      - schema: staging
+        privileges: [SELECT, INSERT, UPDATE, DELETE]
+  puf_dbt:
+    description: "dbt transformations — CRUD on staging/intermediate/mart, read reference/catalog"
+    grants:
+      - schema: staging
+        privileges: [SELECT, INSERT, UPDATE, DELETE]
+      - schema: intermediate
+        privileges: [SELECT, INSERT, UPDATE, DELETE]
+      - schema: mart
+        privileges: [SELECT, INSERT, UPDATE, DELETE]
+      - schema: reference
+        privileges: [SELECT]
+      - schema: catalog
+        privileges: [SELECT]
+  puf_api:
+    description: "API read access — SELECT on mart/reference/catalog"
+    grants:
+      - schema: mart
+        privileges: [SELECT]
+      - schema: reference
+        privileges: [SELECT]
+      - schema: catalog
+        privileges: [SELECT]
+  puf_admin:
+    description: "Admin — all privileges for migrations"
+    superuser: true
+
+duckdb:
+  # DuckDB is embedded, no connection config needed
+  # Parquet paths are configured relative to project root
+  parquet_base: data/processed
+  mart_parquet_base: data/mart

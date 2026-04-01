@@ -1,0 +1,62 @@
+# Data Flow Pipeline — 8-Stage Lifecycle
+# CMS → Raw → Validate → Parquet → PG → dbt → API → Frontend
+
+direction: right
+
+stage1: "1. Source\nDiscovery" {
+  style.fill: "#fef3c7"
+  tech: "sources.yaml"
+  format: "48 definitions"
+}
+
+stage2: "2. Acquire" {
+  style.fill: "#fed7aa"
+  tech: "httpx + retry"
+  format: "CSV / XLSX / ZIP"
+}
+
+stage3: "3. Validate" {
+  style.fill: "#fecaca"
+  tech: "pandas + custom"
+  format: "DataFrame"
+}
+
+stage4: "4. Transform" {
+  style.fill: "#e9d5ff"
+  tech: "pandas + PyArrow"
+  format: "Normalized DF"
+}
+
+stage5: "5. Load" {
+  style.fill: "#dbeafe"
+  tech: "psycopg2 COPY"
+  format: "PG tables"
+}
+
+stage6: "6. Store" {
+  style.fill: "#bbf7d0"
+  tech: "PyArrow write"
+  format: "Parquet (zstd)"
+}
+
+stage7: "7. Model" {
+  style.fill: "#a7f3d0"
+  tech: "dbt-core"
+  format: "staging → mart"
+}
+
+stage8: "8. Serve" {
+  style.fill: "#bfdbfe"
+  tech: "FastAPI + DuckDB"
+  format: "JSON API → React"
+}
+
+# Flow
+stage1 -> stage2: "resolve URL,\nschedule" {style.stroke: "#6b7280"}
+stage2 -> stage3: "SHA-256 hash,\nraw files" {style.stroke: "#6b7280"}
+stage3 -> stage4: "BLOCK/WARN\ngate" {style.stroke: "#6b7280"}
+stage4 -> stage5: "bulk COPY\nto staging" {style.stroke: "#6b7280"}
+stage4 -> stage6: "parallel\nParquet write" {style.stroke: "#6b7280"}
+stage5 -> stage7: "staging →\nintermediate → mart" {style.stroke: "#6b7280"}
+stage7 -> stage8: "PG lookups +\nDuckDB analytics" {style.stroke: "#6b7280"}
+stage6 -> stage8: "DuckDB reads\nParquet directly" {style.stroke: "#9ca3af"; style.stroke-dash: 5}

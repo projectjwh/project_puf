@@ -1,0 +1,718 @@
+# Data Source Registry — 45 Fully Public Healthcare Data Sources
+# Grouped by category. Each source defines acquisition parameters.
+#
+# Fields:
+#   name: Human-readable name
+#   short_name: Used in file paths and table names
+#   publisher: Data publisher (CMS, FDA, Census, etc.)
+#   url: Download URL (NEEDS VERIFICATION for most sources)
+#   format: Source file format (csv, zip, xlsx, etc.)
+#   update_frequency: How often source is updated
+#   lag_months: Typical delay from data period to publication
+#   tier: 1 (MVP core) or 2 (expansion)
+#   volume: Approximate rows per year/snapshot
+#   primary_key: Natural key columns
+#   schedule: Cron expression for automated acquisition
+#   file_size: Expected size range for validation
+#   row_count: Expected row count range for validation
+
+# =============================================================================
+# PROVIDER IDENTITY (4 sources)
+# =============================================================================
+provider_identity:
+  nppes:
+    name: "National Plan & Provider Enumeration System"
+    short_name: nppes
+    publisher: CMS
+    url: "https://download.cms.gov/nppes/NPI_Files.html"
+    format: csv_zip
+    update_frequency: monthly
+    lag_months: 0
+    tier: 1
+    volume: 8_000_000
+    primary_key: [NPI]
+    schedule: "0 2 8 * *"  # 8th of every month
+    file_size:
+      min_gb: 1.5
+      max_gb: 4.0
+    row_count:
+      min: 7_000_000
+      max: 10_000_000
+      severity: BLOCK
+
+  pos_facilities:
+    name: "Provider of Services - Current Files"
+    short_name: pos
+    publisher: CMS
+    url: "https://data.cms.gov/provider-characteristics/hospitals-and-other-facilities/provider-of-services-file-hospital-non-hospital-facilities"
+    format: csv
+    update_frequency: quarterly
+    lag_months: 3
+    tier: 1
+    volume: 300_000
+    primary_key: [PRVDR_NUM]
+    schedule: "0 2 15 1,4,7,10 *"  # Quarterly
+
+  pecos_enrollment:
+    name: "Provider Enrollment, Chain, and Ownership System"
+    short_name: pecos
+    publisher: CMS
+    url: "https://data.cms.gov/provider-characteristics/medicare-provider-supplier-enrollment/medicare-fee-for-service-public-provider-enrollment"
+    format: csv
+    update_frequency: monthly
+    lag_months: 1
+    tier: 2
+    volume: 2_000_000
+    primary_key: [NPI]
+    schedule: "0 2 10 * *"
+
+  ordering_referring:
+    name: "Ordering and Referring Physicians"
+    short_name: ordering_referring
+    publisher: CMS
+    url: "https://data.cms.gov/provider-characteristics/medicare-provider-supplier-enrollment/order-and-referring"
+    format: csv
+    update_frequency: quarterly
+    lag_months: 3
+    tier: 2
+    volume: 1_500_000
+    primary_key: [NPI]
+    schedule: "0 2 20 1,4,7,10 *"
+
+# =============================================================================
+# CODE SYSTEMS (8 sources)
+# =============================================================================
+code_systems:
+  icd10_cm:
+    name: "ICD-10-CM Diagnosis Codes"
+    short_name: icd10cm
+    publisher: CMS
+    url: "https://www.cms.gov/medicare/coding-billing/icd-10-codes/icd-10-cm-files"
+    format: zip_txt
+    update_frequency: annual
+    lag_months: 0
+    tier: 1
+    volume: 72_000
+    primary_key: [icd10_cm_code]
+    schedule: "0 2 1 10 *"  # October (FY start)
+    row_count:
+      min: 70_000
+      max: 100_000
+      severity: WARN
+
+  icd10_pcs:
+    name: "ICD-10-PCS Procedure Codes"
+    short_name: icd10pcs
+    publisher: CMS
+    url: "https://www.cms.gov/medicare/coding-billing/icd-10-codes/icd-10-pcs-files"
+    format: zip_txt
+    update_frequency: annual
+    lag_months: 0
+    tier: 1
+    volume: 78_000
+    primary_key: [icd10_pcs_code]
+    schedule: "0 2 1 10 *"
+
+  hcpcs:
+    name: "HCPCS Level II Codes"
+    short_name: hcpcs
+    publisher: CMS
+    url: "https://www.cms.gov/medicare/coding-billing/healthcare-common-procedure-system"
+    format: zip_txt
+    update_frequency: quarterly
+    lag_months: 0
+    tier: 1
+    volume: 7_500
+    primary_key: [hcpcs_code]
+    schedule: "0 2 1 1,4,7,10 *"
+
+  msdrg:
+    name: "MS-DRG Grouper"
+    short_name: msdrg
+    publisher: CMS
+    url: "https://www.cms.gov/medicare/payment/prospective-payment-systems/acute-inpatient-pps/ms-drg-classifications-and-software"
+    format: zip_xlsx
+    update_frequency: annual
+    lag_months: 0
+    tier: 1
+    volume: 800
+    primary_key: [drg_code]
+    schedule: "0 2 1 10 *"
+
+  ndc:
+    name: "National Drug Code Directory"
+    short_name: ndc
+    publisher: FDA
+    url: "https://www.fda.gov/drugs/drug-approvals-and-databases/national-drug-code-directory"
+    format: zip_txt
+    update_frequency: weekly
+    lag_months: 0
+    tier: 1
+    volume: 300_000
+    primary_key: [ndc_code]
+    schedule: "0 2 * * 1"  # Weekly Monday
+    row_count:
+      min: 250_000
+      max: 400_000
+      severity: WARN
+
+  nucc_taxonomy:
+    name: "NUCC Health Care Provider Taxonomy"
+    short_name: taxonomy
+    publisher: NUCC
+    url: "https://nucc.org/index.php/code-sets-mainmenu-41/provider-taxonomy-mainmenu-40"
+    format: csv
+    update_frequency: biannual
+    lag_months: 0
+    tier: 1
+    volume: 900
+    primary_key: [taxonomy_code]
+    schedule: "0 2 1 1,7 *"  # January and July
+
+  pos_codes:
+    name: "Place of Service Codes"
+    short_name: pos_codes
+    publisher: CMS
+    url: "https://www.cms.gov/medicare/coding-billing/place-of-service-codes/code-sets"
+    format: csv
+    update_frequency: annual
+    lag_months: 0
+    tier: 1
+    volume: 100
+    primary_key: [pos_code]
+    schedule: "0 2 1 1 *"
+
+  apc:
+    name: "Ambulatory Payment Classification"
+    short_name: apc
+    publisher: CMS
+    url: "https://www.cms.gov/medicare/payment/prospective-payment-systems/hospital-outpatient/addendum-a-b-updates"
+    format: xlsx
+    update_frequency: annual
+    lag_months: 0
+    tier: 2
+    volume: 5_000
+    primary_key: [apc_code]
+    schedule: "0 2 1 1 *"
+
+# =============================================================================
+# GEOGRAPHIC (7 sources)
+# =============================================================================
+geographic:
+  fips:
+    name: "FIPS State and County Codes"
+    short_name: fips
+    publisher: Census
+    url: "https://www.census.gov/library/reference/code-lists/ansi.html"
+    format: csv
+    update_frequency: decennial
+    lag_months: 0
+    tier: 1
+    volume: 3_300  # ~50 states + ~3250 counties
+    primary_key: [fips_code]
+    schedule: "0 2 1 1 *"  # Annual check
+
+  zip_county_crosswalk:
+    name: "ZIP-County Crosswalk"
+    short_name: zip_county
+    publisher: HUD
+    url: "https://www.huduser.gov/portal/datasets/usps_crosswalk.html"
+    format: xlsx
+    update_frequency: quarterly
+    lag_months: 1
+    tier: 1
+    volume: 50_000
+    primary_key: [zip_code, county_fips]
+    schedule: "0 2 15 1,4,7,10 *"
+
+  cbsa:
+    name: "Core-Based Statistical Areas"
+    short_name: cbsa
+    publisher: Census
+    url: "https://www.census.gov/geographies/reference-files/time-series/demo/metro-micro/delineation-files.html"
+    format: xlsx
+    update_frequency: annual
+    lag_months: 0
+    tier: 1
+    volume: 2_000
+    primary_key: [cbsa_code]
+    schedule: "0 2 1 3 *"
+
+  ruca:
+    name: "Rural-Urban Commuting Area Codes"
+    short_name: ruca
+    publisher: USDA
+    url: "https://www.ers.usda.gov/data-products/rural-urban-commuting-area-codes/"
+    format: xlsx
+    update_frequency: decennial
+    lag_months: 0
+    tier: 1
+    volume: 75_000
+    primary_key: [zip_code]
+    schedule: "0 2 1 1 *"
+
+  hrr_hsa:
+    name: "Hospital Referral Regions and Health Service Areas"
+    short_name: hrr_hsa
+    publisher: Dartmouth
+    url: "https://data.dartmouthatlas.org/supplemental/"
+    format: csv
+    update_frequency: static
+    lag_months: 0
+    tier: 2
+    volume: 6_500
+    primary_key: [zip_code]
+    schedule: "0 2 1 1 *"  # Annual check
+
+  census_population:
+    name: "Census Population Estimates"
+    short_name: census
+    publisher: Census
+    url: "https://www.census.gov/data/tables/time-series/demo/popest/2020s-counties-total.html"
+    format: csv
+    update_frequency: annual
+    lag_months: 6
+    tier: 2
+    volume: 3_300
+    primary_key: [fips_code, year]
+    schedule: "0 2 1 4 *"
+
+  geographic_variation:
+    name: "Medicare Geographic Variation"
+    short_name: geovar
+    publisher: CMS
+    url: "https://data.cms.gov/summary-statistics-on-beneficiary-use-of-health-services/medicare-geographic-variation"
+    format: csv
+    update_frequency: annual
+    lag_months: 24
+    tier: 1
+    volume: 3_300
+    primary_key: [bene_geo_lvl, state_fips, county_fips]
+    schedule: "0 2 1 7 *"
+    row_count:
+      min: 3_000
+      max: 5_000
+      severity: WARN
+
+# =============================================================================
+# UTILIZATION (6 sources)
+# =============================================================================
+utilization:
+  part_b:
+    name: "Medicare Part B Physician/Supplier Utilization"
+    short_name: partb
+    publisher: CMS
+    url: "https://data.cms.gov/provider-summary-by-type-of-service/medicare-physician-other-practitioners"
+    format: csv
+    update_frequency: annual
+    lag_months: 24
+    tier: 1
+    volume: 10_000_000
+    primary_key: [rendering_npi, hcpcs_code, place_of_service_code, data_year]
+    schedule: "0 2 15 6 *"
+    file_size:
+      min_gb: 1.0
+      max_gb: 5.0
+    row_count:
+      min: 8_000_000
+      max: 13_000_000
+      severity: WARN
+
+  part_d:
+    name: "Medicare Part D Prescribers"
+    short_name: partd
+    publisher: CMS
+    url: "https://data.cms.gov/provider-summary-by-type-of-service/medicare-part-d-prescribers"
+    format: csv
+    update_frequency: annual
+    lag_months: 24
+    tier: 1
+    volume: 25_000_000
+    primary_key: [prescriber_npi, brand_name, generic_name, data_year]
+    schedule: "0 2 20 6 *"
+    file_size:
+      min_gb: 2.0
+      max_gb: 8.0
+    row_count:
+      min: 20_000_000
+      max: 30_000_000
+      severity: WARN
+
+  inpatient:
+    name: "Medicare Inpatient Hospitals - by Provider and Service"
+    short_name: inpatient
+    publisher: CMS
+    url: "https://data.cms.gov/provider-summary-by-type-of-service/medicare-inpatient-hospitals"
+    format: csv
+    update_frequency: annual
+    lag_months: 24
+    tier: 2
+    volume: 200_000
+    primary_key: [ccn, drg_code, data_year]
+    schedule: "0 2 25 6 *"
+
+  snf_utilization:
+    name: "Skilled Nursing Facility Utilization"
+    short_name: snf
+    publisher: CMS
+    url: "https://data.cms.gov/provider-summary-by-type-of-service/medicare-skilled-nursing-facilities"
+    format: csv
+    update_frequency: annual
+    lag_months: 24
+    tier: 2
+    volume: 15_000
+    primary_key: [ccn, data_year]
+    schedule: "0 2 1 7 *"
+
+  hha_utilization:
+    name: "Home Health Agency Utilization"
+    short_name: hha
+    publisher: CMS
+    url: "https://data.cms.gov/provider-summary-by-type-of-service/medicare-home-health-agencies"
+    format: csv
+    update_frequency: annual
+    lag_months: 24
+    tier: 2
+    volume: 10_000
+    primary_key: [ccn, data_year]
+    schedule: "0 2 5 7 *"
+
+  hospice_utilization:
+    name: "Hospice Utilization"
+    short_name: hospice
+    publisher: CMS
+    url: "https://data.cms.gov/provider-summary-by-type-of-service/medicare-hospice"
+    format: csv
+    update_frequency: annual
+    lag_months: 24
+    tier: 2
+    volume: 5_000
+    primary_key: [ccn, data_year]
+    schedule: "0 2 10 7 *"
+
+# =============================================================================
+# FEE SCHEDULES (6 sources)
+# =============================================================================
+fee_schedules:
+  rvu:
+    name: "Physician Fee Schedule - Relative Value Units"
+    short_name: rvu
+    publisher: CMS
+    url: "https://www.cms.gov/medicare/payment/physician-fee-schedule/search/overview"
+    format: zip_csv
+    update_frequency: annual
+    lag_months: 0
+    tier: 1
+    volume: 16_000
+    primary_key: [hcpcs_code, modifier]
+    schedule: "0 2 1 11 *"
+
+  wage_index:
+    name: "Hospital Wage Index"
+    short_name: wage_index
+    publisher: CMS
+    url: "https://www.cms.gov/medicare/payment/prospective-payment-systems/acute-inpatient-pps/fy-2024-ipps-final-rule-home-page"
+    format: xlsx
+    update_frequency: annual
+    lag_months: 0
+    tier: 1
+    volume: 4_000
+    primary_key: [cbsa_code]
+    schedule: "0 2 1 10 *"
+
+  ipps_rates:
+    name: "Inpatient Prospective Payment System Rates"
+    short_name: ipps
+    publisher: CMS
+    url: "https://www.cms.gov/medicare/payment/prospective-payment-systems/acute-inpatient-pps"
+    format: xlsx
+    update_frequency: annual
+    lag_months: 0
+    tier: 1
+    volume: 800
+    primary_key: [drg_code, fiscal_year]
+    schedule: "0 2 1 10 *"
+
+  clfs:
+    name: "Clinical Laboratory Fee Schedule"
+    short_name: clfs
+    publisher: CMS
+    url: "https://www.cms.gov/medicare/payment/clinical-laboratory-fee-schedule"
+    format: zip_csv
+    update_frequency: annual
+    lag_months: 0
+    tier: 2
+    volume: 3_000
+    primary_key: [hcpcs_code]
+    schedule: "0 2 1 1 *"
+
+  dmepos_fees:
+    name: "DMEPOS Fee Schedule"
+    short_name: dmepos_fees
+    publisher: CMS
+    url: "https://www.cms.gov/medicare/payment/durable-medical-equipment-prosthetics-orthotics-supplies-dmepos/dmepos-fee-schedule"
+    format: zip_csv
+    update_frequency: quarterly
+    lag_months: 0
+    tier: 2
+    volume: 10_000
+    primary_key: [hcpcs_code, modifier, state]
+    schedule: "0 2 1 1,4,7,10 *"
+
+  snf_pps:
+    name: "SNF Prospective Payment System"
+    short_name: snf_pps
+    publisher: CMS
+    url: "https://www.cms.gov/medicare/payment/prospective-payment-systems/skilled-nursing-facility-snf"
+    format: xlsx
+    update_frequency: annual
+    lag_months: 0
+    tier: 2
+    volume: 1_000
+    primary_key: [pdpm_group, fiscal_year]
+    schedule: "0 2 1 10 *"
+
+# =============================================================================
+# DRUG / PRESCRIBING (3 sources)
+# =============================================================================
+drug_prescribing:
+  sdud:
+    name: "State Drug Utilization Data (Medicaid)"
+    short_name: sdud
+    publisher: CMS
+    url: "https://data.medicaid.gov/dataset/0ad65fe5-3ad3-5d79-a3f9-7893ded7963a"
+    format: csv
+    update_frequency: quarterly
+    lag_months: 6
+    tier: 2
+    volume: 5_000_000  # per quarter
+    primary_key: [ndc, state, year, quarter]
+    schedule: "0 2 15 1,4,7,10 *"
+
+  rxnorm:
+    name: "RxNorm Drug Names and Codes"
+    short_name: rxnorm
+    publisher: NLM
+    url: "https://www.nlm.nih.gov/research/umls/rxnorm/docs/rxnormfiles.html"
+    format: zip_rrf
+    update_frequency: monthly
+    lag_months: 0
+    tier: 2
+    volume: 400_000
+    primary_key: [rxcui]
+    schedule: "0 2 5 * *"
+
+  asp:
+    name: "Average Sales Price Drug Pricing"
+    short_name: asp
+    publisher: CMS
+    url: "https://www.cms.gov/medicare/payment/all-fee-schedules/medicare-part-b-drug-average-sales-price"
+    format: xlsx
+    update_frequency: quarterly
+    lag_months: 2
+    tier: 2
+    volume: 800
+    primary_key: [hcpcs_code, quarter, year]
+    schedule: "0 2 1 1,4,7,10 *"
+
+# =============================================================================
+# QUALITY (5 sources)
+# =============================================================================
+quality:
+  five_star:
+    name: "Nursing Home Five-Star Quality Rating"
+    short_name: five_star
+    publisher: CMS
+    url: "https://data.cms.gov/provider-data/dataset/4pq5-n9py"
+    format: csv
+    update_frequency: monthly
+    lag_months: 3
+    tier: 2
+    volume: 15_000
+    primary_key: [ccn]
+    schedule: "0 2 1 * *"
+
+  pbj_staffing:
+    name: "Payroll-Based Journal Staffing Data"
+    short_name: pbj
+    publisher: CMS
+    url: "https://data.cms.gov/quality-of-care/payroll-based-journal-daily-nurse-staffing"
+    format: csv
+    update_frequency: quarterly
+    lag_months: 6
+    tier: 2
+    volume: 5_500_000
+    primary_key: [ccn, work_date]
+    schedule: "0 2 20 1,4,7,10 *"
+
+  cahps:
+    name: "CAHPS Hospital Patient Experience"
+    short_name: cahps
+    publisher: CMS
+    url: "https://data.cms.gov/provider-data/dataset/dgck-syfz"
+    format: csv
+    update_frequency: annual
+    lag_months: 12
+    tier: 2
+    volume: 4_500
+    primary_key: [ccn, measure_id]
+    schedule: "0 2 1 5 *"
+
+  dialysis:
+    name: "Dialysis Facility Quality"
+    short_name: dialysis
+    publisher: CMS
+    url: "https://data.cms.gov/provider-data/dataset/23ew-n7w9"
+    format: csv
+    update_frequency: annual
+    lag_months: 12
+    tier: 2
+    volume: 7_500
+    primary_key: [ccn, measure_id]
+    schedule: "0 2 1 2 *"
+
+  readmissions:
+    name: "Hospital Readmissions Reduction Program"
+    short_name: readmissions
+    publisher: CMS
+    url: "https://data.cms.gov/provider-data/dataset/9n3s-kdb3"
+    format: csv
+    update_frequency: annual
+    lag_months: 12
+    tier: 2
+    volume: 3_500
+    primary_key: [ccn, measure_id]
+    schedule: "0 2 1 10 *"
+
+# =============================================================================
+# HOSPITAL / FINANCIAL (5 sources)
+# =============================================================================
+hospital_financial:
+  cost_reports_hospital:
+    name: "Hospital Cost Reports (HCRIS)"
+    short_name: cost_reports
+    publisher: CMS
+    url: "https://www.cms.gov/Research-Statistics-Data-and-Systems/Downloadable-Public-Use-Files/Cost-Reports"
+    format: csv_zip
+    update_frequency: quarterly
+    lag_months: 6
+    tier: 1
+    volume: 6_000  # per year
+    primary_key: [rpt_rec_num]
+    schedule: "0 2 1 2,5,8,11 *"
+
+  cost_reports_snf:
+    name: "SNF Cost Reports"
+    short_name: cost_reports_snf
+    publisher: CMS
+    url: "https://www.cms.gov/Research-Statistics-Data-and-Systems/Downloadable-Public-Use-Files/Cost-Reports"
+    format: csv_zip
+    update_frequency: quarterly
+    lag_months: 6
+    tier: 2
+    volume: 15_000
+    primary_key: [rpt_rec_num]
+    schedule: "0 2 5 2,5,8,11 *"
+
+  cost_reports_hha:
+    name: "HHA Cost Reports"
+    short_name: cost_reports_hha
+    publisher: CMS
+    url: "https://www.cms.gov/Research-Statistics-Data-and-Systems/Downloadable-Public-Use-Files/Cost-Reports"
+    format: csv_zip
+    update_frequency: quarterly
+    lag_months: 6
+    tier: 2
+    volume: 10_000
+    primary_key: [rpt_rec_num]
+    schedule: "0 2 10 2,5,8,11 *"
+
+  cost_reports_hospice:
+    name: "Hospice Cost Reports"
+    short_name: cost_reports_hospice
+    publisher: CMS
+    url: "https://www.cms.gov/Research-Statistics-Data-and-Systems/Downloadable-Public-Use-Files/Cost-Reports"
+    format: csv_zip
+    update_frequency: quarterly
+    lag_months: 6
+    tier: 2
+    volume: 5_000
+    primary_key: [rpt_rec_num]
+    schedule: "0 2 15 2,5,8,11 *"
+
+  hospital_general:
+    name: "Hospital General Information"
+    short_name: hospital_general
+    publisher: CMS
+    url: "https://data.cms.gov/provider-data/dataset/xubh-q36u"
+    format: csv
+    update_frequency: quarterly
+    lag_months: 3
+    tier: 2
+    volume: 5_000
+    primary_key: [ccn]
+    schedule: "0 2 1 1,4,7,10 *"
+
+# =============================================================================
+# CHARGES (1 source)
+# =============================================================================
+charges:
+  hospital_charges:
+    name: "Inpatient Hospital Charge Data"
+    short_name: charges
+    publisher: CMS
+    url: "https://data.cms.gov/provider-summary-by-type-of-service/medicare-inpatient-hospitals/medicare-inpatient-hospitals-by-provider-and-service"
+    format: csv
+    update_frequency: annual
+    lag_months: 24
+    tier: 2
+    volume: 200_000
+    primary_key: [ccn, drg_code, data_year]
+    schedule: "0 2 1 8 *"
+
+# =============================================================================
+# DME (1 source)
+# =============================================================================
+dme:
+  dme_suppliers:
+    name: "DME Supplier Utilization"
+    short_name: dme
+    publisher: CMS
+    url: "https://data.cms.gov/provider-summary-by-type-of-service/medicare-durable-medical-equipment-devices-supplies"
+    format: csv
+    update_frequency: annual
+    lag_months: 24
+    tier: 2
+    volume: 500_000
+    primary_key: [referring_npi, supplier_npi, hcpcs_code, data_year]
+    schedule: "0 2 1 7 *"
+
+# =============================================================================
+# MEDICARE ADVANTAGE (2 sources)
+# =============================================================================
+medicare_advantage:
+  ma_enrollment:
+    name: "Medicare Advantage Enrollment by County"
+    short_name: ma_enrollment
+    publisher: CMS
+    url: "https://www.cms.gov/data-research/statistics-trends-and-reports/medicare-advantagepart-d-contract-and-enrollment-data/ma-state/county-penetration"
+    format: csv
+    update_frequency: monthly
+    lag_months: 2
+    tier: 2
+    volume: 50_000  # per month
+    primary_key: [contract_id, plan_id, county_fips, year_month]
+    schedule: "0 2 15 * *"
+
+  ma_benchmarks:
+    name: "MA County Rate Books / Benchmarks"
+    short_name: ma_benchmarks
+    publisher: CMS
+    url: "https://www.cms.gov/medicare/payment/medicare-advantage-rates-statistics/fee-for-service-county-level-data"
+    format: xlsx
+    update_frequency: annual
+    lag_months: 0
+    tier: 2
+    volume: 3_300
+    primary_key: [county_fips, year]
+    schedule: "0 2 1 4 *"

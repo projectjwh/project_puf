@@ -1,0 +1,61 @@
+# Schema Layout — PostgreSQL: puf
+# 7 schemas with data flow direction
+
+puf: "PostgreSQL: puf" {
+  style.fill: "#f0f9ff"
+  style.stroke: "#0284c7"
+
+  catalog: catalog {
+    style.fill: "#fef3c7"
+    style.stroke: "#f59e0b"
+    label: "catalog\n7 tables"
+    desc: "Pipeline metadata,\ngovernance, lineage"
+  }
+
+  reference: reference {
+    style.fill: "#dcfce7"
+    style.stroke: "#16a34a"
+    label: "reference\n26 tables"
+    desc: "Code lookups, geographic\ndimensions, fee schedules"
+  }
+
+  staging: staging {
+    style.fill: "#dbeafe"
+    style.stroke: "#2563eb"
+    label: "staging\nviews + tables"
+    desc: "1:1 source mirrors,\nschema contracts"
+  }
+
+  intermediate: intermediate {
+    style.fill: "#e0e7ff"
+    style.stroke: "#4f46e5"
+    label: "intermediate\n13 tables"
+    desc: "Cross-source joins,\nderived metrics"
+  }
+
+  mart: mart {
+    style.fill: "#f3e8ff"
+    style.stroke: "#7c3aed"
+    label: "mart\n16 tables"
+    desc: "Pre-aggregated, indexed,\nAPI-ready analytics"
+  }
+
+  metadata: metadata {
+    style.fill: "#f1f5f9"
+    style.stroke: "#64748b"
+    label: "metadata\n2 tables"
+    desc: "Alembic versions,\ndbt run metadata"
+  }
+
+  raw: raw {
+    style.fill: "#f8fafc"
+    style.stroke: "#94a3b8"
+    label: "raw\n(reserved)"
+    desc: "Reserved for future\ndirect raw loads"
+  }
+
+  # Data flow between schemas
+  reference -> staging: "lookups\nenrich" {style.stroke: "#22c55e"; style.stroke-dash: 3}
+  staging -> intermediate: "dbt joins\n+ aggregates" {style.stroke: "#3b82f6"}
+  intermediate -> mart: "dbt shapes\n+ indexes" {style.stroke: "#6366f1"}
+}

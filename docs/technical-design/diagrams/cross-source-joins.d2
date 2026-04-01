@@ -1,0 +1,73 @@
+# Cross-Source Join Graph
+# Source nodes + join edges showing how datasets connect through intermediate/mart models
+
+direction: right
+
+# === Source Nodes (circles) ===
+nppes: NPPES {shape: circle; style.fill: "#bfdbfe"; style.stroke: "#3b82f6"}
+taxonomy: NUCC Taxonomy {shape: circle; style.fill: "#bfdbfe"; style.stroke: "#3b82f6"}
+fips: FIPS {shape: circle; style.fill: "#bbf7d0"; style.stroke: "#22c55e"}
+partb: Part B {shape: circle; style.fill: "#93c5fd"; style.stroke: "#2563eb"}
+partd: Part D {shape: circle; style.fill: "#93c5fd"; style.stroke: "#2563eb"}
+geovar: GeoVar {shape: circle; style.fill: "#86efac"; style.stroke: "#16a34a"}
+inpatient: Inpatient {shape: circle; style.fill: "#fdba74"; style.stroke: "#f97316"}
+msdrg: MS-DRG {shape: circle; style.fill: "#fcd34d"; style.stroke: "#eab308"}
+cost_reports: Cost Reports {shape: circle; style.fill: "#fdba74"; style.stroke: "#f97316"}
+pos: POS Facilities {shape: circle; style.fill: "#fdba74"; style.stroke: "#f97316"}
+five_star: Five-Star {shape: circle; style.fill: "#5eead4"; style.stroke: "#14b8a6"}
+pbj: PBJ Staffing {shape: circle; style.fill: "#5eead4"; style.stroke: "#14b8a6"}
+sdud: SDUD {shape: circle; style.fill: "#c4b5fd"; style.stroke: "#7c3aed"}
+ndc: NDC Directory {shape: circle; style.fill: "#c4b5fd"; style.stroke: "#7c3aed"}
+asp: ASP Pricing {shape: circle; style.fill: "#c4b5fd"; style.stroke: "#7c3aed"}
+hcpcs: HCPCS {shape: circle; style.fill: "#fcd34d"; style.stroke: "#eab308"}
+readm: Readmissions {shape: circle; style.fill: "#fdba74"; style.stroke: "#f97316"}
+hosp_gen: Hospital General {shape: circle; style.fill: "#fdba74"; style.stroke: "#f97316"}
+cahps: CAHPS {shape: circle; style.fill: "#fdba74"; style.stroke: "#f97316"}
+ma_enroll: MA Enrollment {shape: circle; style.fill: "#fcd34d"; style.stroke: "#d97706"}
+charges: Charges {shape: circle; style.fill: "#fdba74"; style.stroke: "#f97316"}
+
+# === Intermediate Models (diamonds) ===
+int_prov: int_providers {shape: diamond; style.fill: "#e0e7ff"; style.stroke: "#4f46e5"}
+int_svc: int_provider_services {shape: diamond; style.fill: "#e0e7ff"; style.stroke: "#4f46e5"}
+int_rx: int_provider_prescriptions {shape: diamond; style.fill: "#e0e7ff"; style.stroke: "#4f46e5"}
+int_geo: int_geographic_benchmarks {shape: diamond; style.fill: "#e0e7ff"; style.stroke: "#4f46e5"}
+int_disch: int_hospital_discharges {shape: diamond; style.fill: "#e0e7ff"; style.stroke: "#4f46e5"}
+int_fin: int_hospital_financials {shape: diamond; style.fill: "#e0e7ff"; style.stroke: "#4f46e5"}
+int_nq: int_nursing_home_quality {shape: diamond; style.fill: "#e0e7ff"; style.stroke: "#4f46e5"}
+int_drug: int_drug_utilization_medicaid {shape: diamond; style.fill: "#e0e7ff"; style.stroke: "#4f46e5"}
+int_price: int_drug_pricing {shape: diamond; style.fill: "#e0e7ff"; style.stroke: "#4f46e5"}
+int_readm: int_hospital_readmissions {shape: diamond; style.fill: "#e0e7ff"; style.stroke: "#4f46e5"}
+int_ma: int_ma_market {shape: diamond; style.fill: "#e0e7ff"; style.stroke: "#4f46e5"}
+
+# === Join Edges (labeled with key) ===
+nppes -> int_prov: "NPI" {style.stroke: "#3b82f6"}
+taxonomy -> int_prov: "taxonomy_code" {style.stroke: "#3b82f6"}
+fips -> int_prov: "state_fips" {style.stroke: "#22c55e"}
+
+partb -> int_svc: "rendering_npi" {style.stroke: "#3b82f6"}
+partd -> int_rx: "prescriber_npi" {style.stroke: "#3b82f6"}
+
+geovar -> int_geo: "state_fips" {style.stroke: "#22c55e"}
+fips -> int_geo: "state_fips" {style.stroke: "#22c55e"}
+
+inpatient -> int_disch: "ccn, drg_code" {style.stroke: "#f97316"}
+msdrg -> int_disch: "drg_code" {style.stroke: "#eab308"}
+charges -> int_disch: "ccn, drg_code" {style.stroke: "#f97316"}
+
+cost_reports -> int_fin: "ccn" {style.stroke: "#f97316"}
+pos -> int_fin: "ccn" {style.stroke: "#f97316"}
+
+five_star -> int_nq: "ccn" {style.stroke: "#14b8a6"}
+pbj -> int_nq: "ccn" {style.stroke: "#14b8a6"}
+
+sdud -> int_drug: "ndc_code" {style.stroke: "#7c3aed"}
+ndc -> int_drug: "ndc_code" {style.stroke: "#7c3aed"}
+
+asp -> int_price: "hcpcs_code" {style.stroke: "#7c3aed"}
+hcpcs -> int_price: "hcpcs_code" {style.stroke: "#eab308"}
+
+readm -> int_readm: "ccn" {style.stroke: "#f97316"}
+hosp_gen -> int_readm: "ccn" {style.stroke: "#f97316"}
+
+ma_enroll -> int_ma: "county_fips" {style.stroke: "#d97706"}
+fips -> int_ma: "county_fips" {style.stroke: "#22c55e"}

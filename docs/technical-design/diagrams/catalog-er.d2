@@ -1,0 +1,110 @@
+# Catalog ER Diagram — 7 tables with FK relationships
+# Schema: catalog.*
+
+direction: right
+
+sources: catalog.sources {
+  shape: sql_table
+  source_id: INTEGER {constraint: PK}
+  source_name: VARCHAR(100) {constraint: "NOT NULL, UNIQUE"}
+  short_name: VARCHAR(50) {constraint: "NOT NULL, UNIQUE"}
+  publisher: VARCHAR(50) {constraint: NOT NULL}
+  category: VARCHAR(50) {constraint: NOT NULL}
+  download_url: TEXT
+  format: VARCHAR(20)
+  update_frequency: VARCHAR(20)
+  tier: SMALLINT {constraint: "default 1"}
+  status: VARCHAR(20) {constraint: "default 'active'"}
+  primary_key_columns: TEXT
+  notes: TEXT
+  created_at: TIMESTAMP {constraint: "default NOW()"}
+  updated_at: TIMESTAMP {constraint: "default NOW()"}
+}
+
+source_columns: catalog.source_columns {
+  shape: sql_table
+  column_id: INTEGER {constraint: PK}
+  source_id: INTEGER {constraint: "FK → sources"}
+  column_name: VARCHAR(200)
+  source_column_name: VARCHAR(200)
+  data_type: VARCHAR(50)
+  is_nullable: BOOLEAN {constraint: "default true"}
+  is_primary_key: BOOLEAN {constraint: "default false"}
+  description: TEXT
+  validation_regex: VARCHAR(200)
+}
+
+pipeline_runs: catalog.pipeline_runs {
+  shape: sql_table
+  run_id: INTEGER {constraint: PK}
+  source_id: INTEGER {constraint: "FK → sources"}
+  run_date: DATE
+  data_year: SMALLINT
+  data_quarter: SMALLINT
+  stage: VARCHAR(20)
+  status: VARCHAR(20)
+  rows_processed: BIGINT
+  rows_loaded: BIGINT
+  file_hash: VARCHAR(64)
+  file_size_bytes: BIGINT
+  duration_seconds: "DECIMAL(10,2)"
+  error_message: TEXT
+  started_at: TIMESTAMP
+  completed_at: TIMESTAMP
+}
+
+pipeline_failures: catalog.pipeline_failures {
+  shape: sql_table
+  failure_id: INTEGER {constraint: PK}
+  run_id: INTEGER {constraint: "FK → pipeline_runs"}
+  error_type: VARCHAR(50)
+  error_class: VARCHAR(100)
+  error_message: TEXT
+  error_detail: TEXT
+  is_retryable: BOOLEAN {constraint: "default false"}
+}
+
+validation_runs: catalog.validation_runs {
+  shape: sql_table
+  validation_id: INTEGER {constraint: PK}
+  run_id: INTEGER {constraint: "FK → pipeline_runs"}
+  rule_name: VARCHAR(100)
+  severity: VARCHAR(10)
+  passed: BOOLEAN
+  metric_value: TEXT
+  threshold: TEXT
+  message: TEXT
+  rows_affected: BIGINT
+}
+
+quarantine_rows: catalog.quarantine_rows {
+  shape: sql_table
+  quarantine_id: BIGINT {constraint: PK}
+  run_id: INTEGER {constraint: "FK → pipeline_runs"}
+  source_id: INTEGER {constraint: "FK → sources"}
+  rule_name: VARCHAR(100)
+  row_data: TEXT
+  failure_reason: TEXT
+}
+
+data_freshness: catalog.data_freshness {
+  shape: sql_table
+  freshness_id: INTEGER {constraint: PK}
+  source_id: INTEGER {constraint: "FK → sources"}
+  data_year: SMALLINT
+  last_checked_at: TIMESTAMP
+  last_changed_at: TIMESTAMP
+  last_loaded_at: TIMESTAMP
+  latest_file_hash: VARCHAR(64)
+  is_stale: BOOLEAN
+  staleness_days: INTEGER
+}
+
+# Relationships
+sources -> source_columns: "1:N" {style.stroke: "#3b82f6"}
+sources -> pipeline_runs: "1:N" {style.stroke: "#3b82f6"}
+sources -> data_freshness: "1:N" {style.stroke: "#3b82f6"}
+sources -> quarantine_rows: "1:N" {style.stroke: "#3b82f6"}
+pipeline_runs -> pipeline_failures: "1:N" {style.stroke: "#ef4444"}
+pipeline_runs -> validation_runs: "1:N" {style.stroke: "#f59e0b"}
+pipeline_runs -> quarantine_rows: "1:N" {style.stroke: "#f59e0b"}

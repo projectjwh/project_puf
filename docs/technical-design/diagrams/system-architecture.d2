@@ -1,0 +1,99 @@
+# System Architecture — Project PUF
+# High-level component diagram: all services + data stores
+
+direction: right
+
+# --- Layers ---
+
+external: External Sources {
+  style.fill: "#fef3c7"
+  style.stroke: "#f59e0b"
+
+  cms: CMS {shape: cloud}
+  fda: FDA {shape: cloud}
+  hud: HUD {shape: cloud}
+  census: Census {shape: cloud}
+  nucc: NUCC {shape: cloud}
+  dartmouth: Dartmouth {shape: cloud}
+}
+
+ingestion: Ingestion Layer {
+  style.fill: "#dbeafe"
+  style.stroke: "#3b82f6"
+
+  pipelines: "Python Pipelines\n(48 sources)" {
+    shape: hexagon
+  }
+  prefect: "Prefect 3.x\nOrchestration" {
+    shape: hexagon
+  }
+  validation: "BLOCK/WARN\nValidation" {
+    shape: hexagon
+  }
+
+  prefect -> pipelines: schedules
+  pipelines -> validation: every load
+}
+
+storage: Storage Layer {
+  style.fill: "#dcfce7"
+  style.stroke: "#22c55e"
+
+  postgres: "PostgreSQL 16\n(OLTP)" {
+    shape: cylinder
+  }
+  pgbouncer: "PgBouncer\n(Connection Pool)" {
+    shape: diamond
+  }
+  parquet: "Parquet Files\n(zstd compressed)" {
+    shape: stored_data
+  }
+  duckdb: "DuckDB\n(OLAP)" {
+    shape: cylinder
+  }
+  dbt: "dbt-core\n(SQL transforms)" {
+    shape: hexagon
+  }
+
+  pgbouncer -> postgres: transaction mode
+  dbt -> postgres: staging → mart
+  duckdb -> parquet: columnar scan
+}
+
+serving: Serving Layer {
+  style.fill: "#fce7f3"
+  style.stroke: "#ec4899"
+
+  api: "FastAPI\n28 endpoints" {
+    shape: rectangle
+  }
+  router: "Dual-Engine\nRouter" {
+    shape: diamond
+  }
+
+  api -> router: query
+  router -> storage.postgres: lookups, pagination
+  router -> storage.duckdb: analytics, aggregation
+}
+
+presentation: Presentation Layer {
+  style.fill: "#f3e8ff"
+  style.stroke: "#a855f7"
+
+  frontend: "Next.js\n8 pages" {
+    shape: rectangle
+  }
+}
+
+# --- Data Flow Arrows ---
+external.cms -> ingestion.pipelines: HTTP download
+external.fda -> ingestion.pipelines
+external.hud -> ingestion.pipelines
+external.census -> ingestion.pipelines
+
+ingestion.pipelines -> storage.postgres: "COPY to\nstaging/reference"
+ingestion.pipelines -> storage.parquet: "Write Parquet\nto data/processed/"
+
+serving.api -> storage.pgbouncer: pooled reads
+
+presentation.frontend -> serving.api: "REST API\n/api/v1/*"

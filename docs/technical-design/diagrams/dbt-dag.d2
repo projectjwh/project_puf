@@ -1,0 +1,127 @@
+# dbt DAG — Full Model Lineage
+# 11 staging → 13 intermediate → 16 mart
+# Color-coded by domain
+
+direction: right
+
+# === STAGING (views/ephemeral) ===
+staging: Staging {
+  style.fill: "#f8fafc"
+  style.stroke: "#94a3b8"
+
+  stg_nppes: stg_cms__nppes {style.fill: "#bfdbfe"}
+  stg_pos: stg_cms__pos_facilities {style.fill: "#bfdbfe"}
+  stg_partb: stg_cms__part_b_utilization {style.fill: "#bfdbfe"}
+  stg_partd: stg_cms__part_d_prescribers {style.fill: "#bfdbfe"}
+  stg_geovar: stg_cms__geographic_variation {style.fill: "#bfdbfe"}
+  stg_inpatient: stg_cms__inpatient {style.fill: "#fed7aa"}
+  stg_five_star: stg_cms__five_star {style.fill: "#fed7aa"}
+  stg_readmissions: stg_cms__readmissions {style.fill: "#fed7aa"}
+  stg_cahps: stg_cms__cahps {style.fill: "#fed7aa"}
+  stg_sdud: stg_cms__sdud {style.fill: "#e9d5ff"}
+  stg_charges: stg_cms__charges {style.fill: "#fed7aa"}
+}
+
+# === INTERMEDIATE (tables) ===
+intermediate: Intermediate {
+  style.fill: "#f0f9ff"
+  style.stroke: "#64748b"
+
+  # Provider domain (blue)
+  int_providers: int_providers {style.fill: "#93c5fd"}
+  int_provider_svc: int_provider_services {style.fill: "#93c5fd"}
+  int_provider_rx: int_provider_prescriptions {style.fill: "#93c5fd"}
+
+  # Geographic domain (green)
+  int_geo_bench: int_geographic_benchmarks {style.fill: "#86efac"}
+
+  # Hospital domain (orange)
+  int_hosp_disch: int_hospital_discharges {style.fill: "#fdba74"}
+  int_hosp_readm: int_hospital_readmissions {style.fill: "#fdba74"}
+  int_hosp_fin: int_hospital_financials {style.fill: "#fdba74"}
+
+  # Post-acute (teal)
+  int_nh_staff: int_nursing_home_staffing {style.fill: "#5eead4"}
+  int_nh_quality: int_nursing_home_quality {style.fill: "#5eead4"}
+
+  # Drug (purple)
+  int_drug_util: int_drug_utilization_medicaid {style.fill: "#c4b5fd"}
+  int_drug_price: int_drug_pricing {style.fill: "#c4b5fd"}
+
+  # Other
+  int_patient_exp: int_patient_experience {style.fill: "#fdba74"}
+  int_ma_market: int_ma_market {style.fill: "#fcd34d"}
+}
+
+# === MART (tables + indexes) ===
+mart: Mart {
+  style.fill: "#fefce8"
+  style.stroke: "#64748b"
+
+  # Provider (blue)
+  mart_practice: "mart_provider__practice_profile\n→ /api/v1/providers" {style.fill: "#3b82f6"; style.font-color: "#ffffff"}
+
+  # National (green)
+  mart_kpi: "mart_national__kpi_summary\n→ /api/v1/national/kpis" {style.fill: "#22c55e"; style.font-color: "#ffffff"}
+
+  # Geographic (green)
+  mart_spending: "mart_geographic__spending_variation\n→ /api/v1/geographic/spending" {style.fill: "#16a34a"; style.font-color: "#ffffff"}
+  mart_states: "mart_geographic__by_state\n→ /api/v1/geographic/states" {style.fill: "#16a34a"; style.font-color: "#ffffff"}
+
+  # Opioid (red)
+  mart_opioid_st: "mart_opioid__by_state\n→ /api/v1/opioid/by-state" {style.fill: "#ef4444"; style.font-color: "#ffffff"}
+  mart_opioid_rx: "mart_opioid__top_prescribers\n→ /api/v1/opioid/top-prescribers" {style.fill: "#ef4444"; style.font-color: "#ffffff"}
+
+  # Hospital (orange)
+  mart_hosp_fin: "mart_hospital__financial_profile\n→ /api/v1/hospitals/financial" {style.fill: "#f97316"; style.font-color: "#ffffff"}
+  mart_hosp_perf: "mart_hospital__performance\n→ /api/v1/hospitals/performance" {style.fill: "#f97316"; style.font-color: "#ffffff"}
+  mart_hosp_readm: "mart_hospital__readmissions\n→ /api/v1/hospitals/readmissions" {style.fill: "#f97316"; style.font-color: "#ffffff"}
+  mart_hosp_chrg: "mart_hospital__charge_variation\n→ /api/v1/hospitals/charges" {style.fill: "#f97316"; style.font-color: "#ffffff"}
+
+  # Drug (purple)
+  mart_drug_med: "mart_drug__medicaid_utilization\n→ /api/v1/drugs/medicaid-utilization" {style.fill: "#7c3aed"; style.font-color: "#ffffff"}
+  mart_drug_price: "mart_drug__price_trends\n→ /api/v1/drugs/price-trends" {style.fill: "#7c3aed"; style.font-color: "#ffffff"}
+
+  # Post-acute (teal)
+  mart_snf: "mart_postacute__snf_quality\n→ /api/v1/postacute/snf" {style.fill: "#0d9488"; style.font-color: "#ffffff"}
+  mart_hha: "mart_postacute__hha_quality\n→ /api/v1/postacute/hha" {style.fill: "#0d9488"; style.font-color: "#ffffff"}
+  mart_hospice: "mart_postacute__hospice_quality\n→ /api/v1/postacute/hospice" {style.fill: "#0d9488"; style.font-color: "#ffffff"}
+
+  # MA (gold)
+  mart_ma: "mart_ma__market_penetration\n(future endpoint)" {style.fill: "#d97706"; style.font-color: "#ffffff"}
+}
+
+# === STAGING → INTERMEDIATE EDGES ===
+staging.stg_nppes -> intermediate.int_providers
+staging.stg_partb -> intermediate.int_provider_svc
+staging.stg_partd -> intermediate.int_provider_rx
+staging.stg_geovar -> intermediate.int_geo_bench
+staging.stg_inpatient -> intermediate.int_hosp_disch
+staging.stg_readmissions -> intermediate.int_hosp_readm
+staging.stg_pos -> intermediate.int_hosp_fin
+staging.stg_five_star -> intermediate.int_nh_quality
+staging.stg_cahps -> intermediate.int_patient_exp
+staging.stg_sdud -> intermediate.int_drug_util
+staging.stg_charges -> intermediate.int_hosp_disch
+
+# === INTERMEDIATE → MART EDGES ===
+intermediate.int_providers -> mart.mart_practice
+intermediate.int_provider_svc -> mart.mart_practice
+intermediate.int_provider_rx -> mart.mart_practice
+intermediate.int_provider_svc -> mart.mart_kpi
+intermediate.int_provider_rx -> mart.mart_kpi
+intermediate.int_geo_bench -> mart.mart_spending
+intermediate.int_geo_bench -> mart.mart_states
+intermediate.int_provider_rx -> mart.mart_opioid_st
+intermediate.int_provider_rx -> mart.mart_opioid_rx
+intermediate.int_hosp_fin -> mart.mart_hosp_fin
+intermediate.int_hosp_disch -> mart.mart_hosp_perf
+intermediate.int_hosp_readm -> mart.mart_hosp_readm
+intermediate.int_hosp_disch -> mart.mart_hosp_chrg
+intermediate.int_drug_util -> mart.mart_drug_med
+intermediate.int_drug_price -> mart.mart_drug_price
+intermediate.int_nh_quality -> mart.mart_snf
+intermediate.int_nh_staff -> mart.mart_snf
+intermediate.int_patient_exp -> mart.mart_hha
+intermediate.int_patient_exp -> mart.mart_hospice
+intermediate.int_ma_market -> mart.mart_ma

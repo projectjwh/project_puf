@@ -1,0 +1,76 @@
+# Data artifacts (ALL data is .gitignored)
+data/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+*.egg
+.eggs/
+*.whl
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Docker
+docker-compose.override.yml
+
+# PostgreSQL data
+pgdata/
+
+# Prefect
+.prefect/
+
+# dbt
+models/target/
+models/dbt_packages/
+models/logs/
+
+# Node.js (frontend)
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+
+# Pytest
+.pytest_cache/
+htmlcov/
+.coverage
+coverage.xml
+
+# mypy
+.mypy_cache/
+
+# ruff
+.ruff_cache/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Logs
+*.log
+logs/
+
+# Claude Code
+.claude/

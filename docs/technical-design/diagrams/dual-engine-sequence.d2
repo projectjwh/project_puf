@@ -1,0 +1,28 @@
+# Dual-Engine Sequence Diagram
+# API request → engine selection → query → response
+
+shape: sequence_diagram
+
+frontend: Frontend\n(Next.js)
+api: FastAPI\n(/api/v1)
+router: Query Router\n(database.py)
+postgres: PostgreSQL\n(OLTP)
+duckdb: DuckDB\n(OLAP)
+
+# --- Sequence A: Provider Lookup (PostgreSQL path) ---
+
+frontend -> api: "GET /api/v1/providers/1234567890"
+api -> router: "query(sql, engine='pg')"
+router -> postgres: "SELECT * FROM mart.mart_provider__practice_profile\nWHERE npi = '1234567890'"
+postgres -> router: "1 row (<10ms)"
+router -> api: "list[dict]"
+api -> frontend: "200 OK: ProviderProfile JSON"
+
+# --- Sequence B: Analytical Aggregation (DuckDB path) ---
+
+frontend -> api: "GET /api/v1/geographic/spending?data_year=2022"
+api -> router: "query(sql, engine='duckdb')"
+router -> duckdb: "SELECT * FROM read_parquet('data/mart/geographic/*.parquet')\nWHERE data_year = 2022"
+duckdb -> router: "50 rows (columnar scan)"
+router -> api: "list[dict]"
+api -> frontend: "200 OK: list[StateSpending] JSON"

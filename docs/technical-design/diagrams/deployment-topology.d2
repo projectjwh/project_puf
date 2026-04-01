@@ -1,0 +1,76 @@
+# Deployment Topology — Docker Compose Stack
+# 6 containers, ports, health checks, dependencies
+
+direction: right
+
+docker: Docker Compose Network {
+  style.fill: "#f0f9ff"
+  style.stroke: "#0ea5e9"
+
+  postgres: "PostgreSQL 16\n(puf-postgres)" {
+    shape: cylinder
+    style.fill: "#dbeafe"
+    port: ":5432"
+    health: "pg_isready / 5s"
+    volumes: "pgdata (named)"
+    tuning: "shared_buffers=512MB\nwork_mem=64MB\nmax_connections=200"
+  }
+
+  pgbouncer: "PgBouncer\n(puf-pgbouncer)" {
+    shape: diamond
+    style.fill: "#e0e7ff"
+    port: ":6432"
+    health: "pg_isready / 10s"
+    mode: "transaction pooling\npool_size=20"
+  }
+
+  prefect_server: "Prefect Server\n(puf-prefect-server)" {
+    shape: rectangle
+    style.fill: "#fef3c7"
+    port: ":4200"
+    health: "HTTP /api/health / 15s"
+  }
+
+  prefect_worker: "Prefect Worker\n(puf-prefect-worker)" {
+    shape: rectangle
+    style.fill: "#fef9c3"
+    port: "—"
+    type: "process pool"
+    mounts: "/app (project root)"
+  }
+
+  api: "FastAPI\n(puf-api)" {
+    shape: rectangle
+    style.fill: "#dcfce7"
+    port: ":8000"
+    health: "HTTP /health / 10s"
+    mounts: "data/ (read-only)"
+  }
+
+  frontend: "Next.js\n(puf-frontend)" {
+    shape: rectangle
+    style.fill: "#f3e8ff"
+    port: ":3000"
+    env: "NEXT_PUBLIC_API_URL\n=http://localhost:8000/api/v1"
+  }
+
+  # Dependencies
+  pgbouncer -> postgres: "depends_on: healthy" {style.stroke: "#3b82f6"}
+  prefect_server -> postgres: "depends_on: healthy" {style.stroke: "#3b82f6"}
+  prefect_worker -> prefect_server: "depends_on: healthy" {style.stroke: "#f59e0b"}
+  api -> postgres: "depends_on: healthy" {style.stroke: "#3b82f6"}
+  frontend -> api: "depends_on: healthy" {style.stroke: "#22c55e"}
+}
+
+# External access
+external: "External Access" {
+  style.fill: "#fecaca"
+  style.stroke: "#ef4444"
+  shape: cloud
+}
+
+external -> docker.frontend: "http://localhost:3000"
+external -> docker.api: "http://localhost:8000"
+external -> docker.prefect_server: "http://localhost:4200"
+external -> docker.pgbouncer: "tcp://localhost:6432"
+external -> docker.postgres: "tcp://localhost:5432\n(direct, admin only)"

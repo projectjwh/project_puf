@@ -1,0 +1,80 @@
+[build-system]
+requires = ["setuptools>=75.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "project-puf"
+version = "0.1.0"
+description = "Public Healthcare Data Repository — interactive platform for accessing, visualizing, and querying publicly available healthcare data"
+requires-python = ">=3.12"
+license = {text = "MIT"}
+dependencies = [
+    # Orchestration
+    "prefect>=3.0,<4.0",
+    # Database
+    "psycopg2-binary>=2.9",
+    "sqlalchemy>=2.0,<3.0",
+    "alembic>=1.14,<2.0",
+    "pgbouncer>=0.0.1",  # Python client for PgBouncer stats
+    # OLAP
+    "duckdb>=1.1,<2.0",
+    # Data processing
+    "pandas>=2.2,<3.0",
+    "pyarrow>=18.0",
+    "openpyxl>=3.1",
+    # Validation
+    "pydantic>=2.0,<3.0",
+    "pydantic-settings>=2.0,<3.0",
+    "pandera>=0.21",
+    # Transformation (dbt)
+    "dbt-core>=1.9,<2.0",
+    "dbt-postgres>=1.9,<2.0",
+    # API
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.34",
+    # Logging
+    "structlog>=24.0",
+    # HTTP
+    "httpx>=0.28",
+    "tqdm>=4.66",
+    # Config
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=6.0",
+    "pytest-asyncio>=0.25",
+    "ruff>=0.9",
+    "mypy>=1.14",
+    "pre-commit>=4.0",
+]
+
+[tool.setuptools.packages.find]
+include = ["pipelines*", "flows*", "api*"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP", "B", "SIM", "TCH"]
+ignore = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["pipelines", "flows", "api"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+markers = [
+    "integration: marks tests requiring database or Docker (deselect with '-m \"not integration\"')",
+    "slow: marks tests that take >10s",
+]
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true

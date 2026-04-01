@@ -1,0 +1,32 @@
+version: 2
+
+models:
+  - name: mart_provider__practice_profile
+    description: >
+      Cross-source provider practice profile: NPPES identity + Part B services + Part D prescribing.
+      One row per NPI. Indexed for <10ms lookup by NPI, state, and specialty.
+    columns:
+      - name: npi
+        description: "10-digit National Provider Identifier"
+        data_tests:
+          - unique
+          - not_null
+      - name: display_name
+        data_tests:
+          - not_null
+      - name: practice_state
+        description: "2-letter state abbreviation"
+      - name: primary_taxonomy_code
+        description: "NUCC primary taxonomy code"
+      - name: total_services_rendered
+        description: "Total Part B services for latest data year"
+      - name: total_medicare_payments
+        description: "Total Medicare Part B payments for latest data year"
+      - name: total_drugs_prescribed
+        description: "Total Part D claims for latest data year"
+      - name: has_opioid_prescriptions
+        description: "True if provider had any opioid claims in latest year"
+      - name: has_part_b_data
+        description: "True if provider has Part B utilization data"
+      - name: has_part_d_data
+        description: "True if provider has Part D prescribing data"

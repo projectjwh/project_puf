@@ -1,0 +1,19 @@
+version: 2
+
+models:
+  - name: mart_national__kpi_summary
+    description: >
+      National-level KPIs by year. One row per data_year.
+      Combines Part B, Part D, and Geographic Variation into a single summary.
+      Includes YOY change calculations.
+    columns:
+      - name: data_year
+        data_tests:
+          - unique
+          - not_null
+      - name: national_total_medicare_payments
+        description: "Total Medicare Part B payments nationally"
+      - name: national_total_drug_cost
+        description: "Total Part D drug spending nationally"
+      - name: yoy_payment_change_pct
+        description: "Year-over-year change in total Medicare payments (%)"

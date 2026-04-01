@@ -1,0 +1,110 @@
+# Frontend Pages — Component Dependency Tree
+# Pages → API functions → shared components
+
+direction: down
+
+# === Pages ===
+pages: Pages {
+  style.fill: "#f3e8ff"
+  style.stroke: "#7c3aed"
+
+  dashboard: "/dashboard\nDashboardPage" {style.fill: "#e9d5ff"}
+  providers: "/providers\nProvidersPage" {style.fill: "#e9d5ff"}
+  geographic: "/geographic\nGeographicPage" {style.fill: "#e9d5ff"}
+  specialties: "/specialties\nSpecialtiesPage" {style.fill: "#e9d5ff"}
+  opioid: "/opioid\nOpioidPage" {style.fill: "#e9d5ff"}
+  hospitals: "/hospitals\nHospitalComparisonPage" {style.fill: "#e9d5ff"}
+  drugs: "/drugs\nDrugSpendingPage" {style.fill: "#e9d5ff"}
+  postacute: "/postacute\nPostAcutePage" {style.fill: "#e9d5ff"}
+}
+
+# === API Functions (lib/api.ts) ===
+api: "API Client (lib/api.ts)" {
+  style.fill: "#dbeafe"
+  style.stroke: "#3b82f6"
+
+  getNationalKPIs: getNationalKPIs()
+  searchProviders: searchProviders()
+  getProvider: getProvider()
+  getSpending: getSpendingVariation()
+  getStates: getStates()
+  getSpecialties: getSpecialties()
+  getSpecialtyDetail: getSpecialtyDetail()
+  getOpioidState: getOpioidByState()
+  getTopOpioid: getTopOpioidPrescribers()
+  getHospFinancial: getHospitalFinancial()
+  getDrugUtil: getMedicaidUtilization()
+  getDrugPrice: getDrugPriceTrends()
+  getPostacuteSNF: getPostacuteSNF()
+  getPostacuteHHA: getPostacuteHHA()
+  getPostacuteHospice: getPostacuteHospice()
+}
+
+# === Shared Components ===
+components: "Shared Components" {
+  style.fill: "#dcfce7"
+  style.stroke: "#22c55e"
+
+  sidebar: "Sidebar\n8 nav routes" {style.fill: "#bbf7d0"}
+  datatable: "DataTable<T>\nsortable, paginated" {style.fill: "#bbf7d0"}
+  kpicard: "KpiCard\nmetric + trend" {style.fill: "#bbf7d0"}
+  filterbar: "FilterBar\ndropdowns + search" {style.fill: "#bbf7d0"}
+}
+
+# === Utilities ===
+utils: "Utilities (lib/format.ts)" {
+  style.fill: "#fef3c7"
+  style.stroke: "#f59e0b"
+  formatCurrency: "formatCurrency()"
+  formatNumber: "formatNumber()"
+  formatPercent: "formatPercent()"
+  formatCompact: "formatCompact()"
+}
+
+# === Page → API edges ===
+pages.dashboard -> api.getNationalKPIs
+pages.providers -> api.searchProviders
+pages.providers -> api.getProvider
+pages.geographic -> api.getSpending
+pages.geographic -> api.getStates
+pages.specialties -> api.getSpecialties
+pages.specialties -> api.getSpecialtyDetail
+pages.opioid -> api.getOpioidState
+pages.opioid -> api.getTopOpioid
+pages.hospitals -> api.getHospFinancial
+pages.drugs -> api.getDrugUtil
+pages.drugs -> api.getDrugPrice
+pages.postacute -> api.getPostacuteSNF
+pages.postacute -> api.getPostacuteHHA
+pages.postacute -> api.getPostacuteHospice
+
+# === Page → Component edges ===
+pages.dashboard -> components.kpicard
+pages.dashboard -> components.datatable
+pages.providers -> components.datatable
+pages.providers -> components.filterbar
+pages.geographic -> components.kpicard
+pages.geographic -> components.datatable
+pages.geographic -> components.filterbar
+pages.specialties -> components.datatable
+pages.specialties -> components.filterbar
+pages.opioid -> components.datatable
+pages.opioid -> components.kpicard
+pages.hospitals -> components.datatable
+pages.hospitals -> components.filterbar
+pages.hospitals -> components.kpicard
+pages.drugs -> components.datatable
+pages.drugs -> components.filterbar
+pages.postacute -> components.datatable
+pages.postacute -> components.filterbar
+pages.postacute -> components.kpicard
+
+# All pages use sidebar
+pages.dashboard -> components.sidebar: {style.stroke-dash: 3; style.stroke: "#94a3b8"}
+pages.providers -> components.sidebar: {style.stroke-dash: 3; style.stroke: "#94a3b8"}
+
+# All pages use format utils
+pages.dashboard -> utils: {style.stroke-dash: 5; style.stroke: "#d97706"}
+pages.geographic -> utils: {style.stroke-dash: 5; style.stroke: "#d97706"}
+pages.hospitals -> utils: {style.stroke-dash: 5; style.stroke: "#d97706"}
+pages.drugs -> utils: {style.stroke-dash: 5; style.stroke: "#d97706"}

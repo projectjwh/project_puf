@@ -1,0 +1,90 @@
+# Pipeline State Machine
+# Stage transitions with BLOCK/WARN/SUCCESS outcomes
+
+direction: right
+
+idle: Idle {
+  style.fill: "#e2e8f0"
+  shape: circle
+}
+
+discovering: Discovering {
+  style.fill: "#fef3c7"
+  desc: "Read source def\nfrom sources.yaml"
+}
+
+acquiring: Acquiring {
+  style.fill: "#fed7aa"
+  desc: "HTTP download\nSHA-256 hash\nZIP extract"
+}
+
+validating: Validating {
+  style.fill: "#fecaca"
+  desc: "10 check functions\nBLOCK/WARN severity"
+}
+
+transforming: Transforming {
+  style.fill: "#e9d5ff"
+  desc: "NPI/FIPS/NDC normalize\ntype casting\nderived fields"
+}
+
+loading: Loading {
+  style.fill: "#bfdbfe"
+  desc: "psycopg2 COPY\nto PG staging"
+}
+
+storing: Storing {
+  style.fill: "#bbf7d0"
+  desc: "Write Parquet\nzstd compressed"
+}
+
+modeling: Modeling {
+  style.fill: "#a7f3d0"
+  desc: "dbt run\nstaging → mart"
+}
+
+serving: Serving {
+  style.fill: "#93c5fd"
+  desc: "FastAPI + DuckDB\nready for queries"
+  shape: double_circle
+}
+
+failed: Failed {
+  style.fill: "#fca5a5"
+  style.stroke: "#dc2626"
+  shape: circle
+}
+
+skipped: Skipped {
+  style.fill: "#d1d5db"
+  shape: circle
+}
+
+# Happy path
+idle -> discovering: "trigger\n(schedule/manual)" {style.stroke: "#6b7280"}
+discovering -> acquiring: "source found" {style.stroke: "#22c55e"}
+acquiring -> validating: "download OK" {style.stroke: "#22c55e"}
+validating -> transforming: "all checks PASS" {style.stroke: "#22c55e"}
+transforming -> loading: "transform OK" {style.stroke: "#22c55e"}
+loading -> storing: "COPY complete" {style.stroke: "#22c55e"}
+storing -> modeling: "Parquet written" {style.stroke: "#22c55e"}
+modeling -> serving: "dbt success" {style.stroke: "#22c55e"}
+
+# Error paths
+discovering -> failed: "source not found" {style.stroke: "#ef4444"}
+acquiring -> failed: "download failed\n(3 retries exhausted)" {style.stroke: "#ef4444"}
+validating -> failed: "BLOCK severity" {style.stroke: "#ef4444"}
+loading -> failed: "COPY error" {style.stroke: "#ef4444"}
+modeling -> failed: "dbt error" {style.stroke: "#ef4444"}
+
+# WARN self-transition
+validating -> validating: "WARN: log + continue" {
+  style.stroke: "#f59e0b"
+  style.stroke-dash: 3
+}
+
+# Skip path (hash unchanged)
+acquiring -> skipped: "hash unchanged\n(data not stale)" {style.stroke: "#9ca3af"}
+
+# Retry from failed
+failed -> acquiring: "retry\n(manual/scheduled)" {style.stroke: "#6b7280"; style.stroke-dash: 5}

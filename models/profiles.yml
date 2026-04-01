@@ -1,0 +1,21 @@
+project_puf:
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      host: "{{ env_var('PUF_DB_HOST', 'localhost') }}"
+      port: "{{ env_var('PUF_DB_PORT', '5432') | int }}"
+      user: puf_dbt
+      password: "{{ env_var('PUF_DBT_PASSWORD', 'puf_dbt_password') }}"
+      dbname: puf
+      schema: staging
+      threads: 4
+    prod:
+      type: postgres
+      host: "{{ env_var('PUF_DB_HOST', 'localhost') }}"
+      port: "{{ env_var('PUF_DB_PORT', '5432') | int }}"
+      user: puf_dbt
+      password: "{{ env_var('PUF_DBT_PASSWORD') }}"
+      dbname: puf
+      schema: staging
+      threads: 8

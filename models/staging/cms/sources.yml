@@ -1,0 +1,249 @@
+version: 2
+
+sources:
+  - name: reference
+    description: "Reference tables managed by Alembic + pipeline loads"
+    schema: reference
+    tables:
+      - name: ref_providers
+        description: "Master provider dimension from NPPES (8M rows)"
+        columns:
+          - name: npi
+            description: "10-digit National Provider Identifier"
+            data_tests:
+              - unique
+              - not_null
+
+      - name: ref_provider_taxonomies
+        description: "Provider taxonomy codes (unpivoted from NPPES)"
+        columns:
+          - name: npi
+            data_tests:
+              - not_null
+          - name: taxonomy_code
+            data_tests:
+              - not_null
+
+      - name: ref_pos_facilities
+        description: "CMS-certified facilities from Provider of Services file"
+        columns:
+          - name: ccn
+            description: "6-digit CMS Certification Number"
+            data_tests:
+              - unique
+              - not_null
+
+      - name: ref_nucc_taxonomy
+        description: "NUCC provider taxonomy code descriptions"
+        columns:
+          - name: taxonomy_code
+            data_tests:
+              - unique
+              - not_null
+
+      - name: ref_state_fips
+        description: "State FIPS codes"
+        columns:
+          - name: state_fips
+            data_tests:
+              - unique
+              - not_null
+
+      - name: ref_icd10_cm
+        description: "ICD-10-CM diagnosis codes"
+      - name: ref_icd10_pcs
+        description: "ICD-10-PCS procedure codes"
+      - name: ref_hcpcs_codes
+        description: "HCPCS/CPT codes"
+      - name: ref_msdrg
+        description: "MS-DRG grouper codes"
+      - name: ref_ndc
+        description: "National Drug Code directory"
+      - name: ref_rvu_fee_schedule
+        description: "Physician fee schedule RVUs"
+      - name: ref_wage_index
+        description: "Hospital wage index by CBSA"
+      - name: ref_ipps_rates
+        description: "IPPS DRG relative weights and rates"
+
+  - name: staging
+    description: "Staging tables managed by Alembic DDL + pipeline loads"
+    schema: staging
+    tables:
+      - name: stg_cms__part_b_utilization
+        description: "Medicare Part B utilization (10M rows/year, partitioned by data_year)"
+        columns:
+          - name: rendering_npi
+            description: "10-digit NPI of the rendering provider"
+            data_tests:
+              - not_null
+          - name: hcpcs_code
+            description: "HCPCS/CPT code for the service"
+            data_tests:
+              - not_null
+          - name: data_year
+            data_tests:
+              - not_null
+
+      - name: stg_cms__part_d_prescribers
+        description: "Medicare Part D prescriber data (25M rows/year, partitioned by data_year)"
+        columns:
+          - name: prescriber_npi
+            description: "10-digit NPI of the prescriber"
+            data_tests:
+              - not_null
+          - name: drug_name
+            description: "Brand name of the drug"
+            data_tests:
+              - not_null
+          - name: data_year
+            data_tests:
+              - not_null
+
+      - name: stg_cms__geographic_variation
+        description: "Medicare Geographic Variation (~3.3K rows/year)"
+        columns:
+          - name: bene_geo_lvl
+            description: "Geography level: State, County, or National"
+            data_tests:
+              - not_null
+          - name: data_year
+            data_tests:
+              - not_null
+
+      - name: stg_cms__inpatient
+        description: "Medicare Inpatient Hospitals by Provider and DRG (~200K rows/year)"
+        columns:
+          - name: ccn
+            data_tests: [not_null]
+          - name: drg_code
+            data_tests: [not_null]
+          - name: data_year
+            data_tests: [not_null]
+
+      - name: stg_cms__snf_utilization
+        description: "Medicare SNF utilization by provider (~15K rows/year)"
+        columns:
+          - name: ccn
+            data_tests: [not_null]
+
+      - name: stg_cms__hha_utilization
+        description: "Medicare HHA utilization by provider (~10K rows/year)"
+        columns:
+          - name: ccn
+            data_tests: [not_null]
+
+      - name: stg_cms__hospice_utilization
+        description: "Medicare Hospice utilization by provider (~5K rows/year)"
+        columns:
+          - name: ccn
+            data_tests: [not_null]
+
+      - name: stg_cms__sdud
+        description: "State Drug Utilization Data - Medicaid (~5M rows/quarter)"
+        columns:
+          - name: ndc
+            data_tests: [not_null]
+          - name: state
+            data_tests: [not_null]
+
+      - name: stg_cms__five_star
+        description: "Nursing Home Five-Star quality ratings (~15K facilities)"
+        columns:
+          - name: ccn
+            data_tests: [not_null]
+
+      - name: stg_cms__pbj_staffing
+        description: "Payroll-Based Journal daily staffing (~5.5M rows/quarter)"
+        columns:
+          - name: ccn
+            data_tests: [not_null]
+          - name: work_date
+            data_tests: [not_null]
+
+      - name: stg_cms__cahps
+        description: "CAHPS Hospital Patient Experience (measure-level)"
+        columns:
+          - name: ccn
+            data_tests: [not_null]
+
+      - name: stg_cms__dialysis
+        description: "Dialysis Facility Quality (measure-level)"
+        columns:
+          - name: ccn
+            data_tests: [not_null]
+
+      - name: stg_cms__readmissions
+        description: "Hospital Readmissions Reduction Program"
+        columns:
+          - name: ccn
+            data_tests: [not_null]
+
+      - name: stg_cms__charges
+        description: "Inpatient Hospital Charge Data by DRG (~200K rows/year)"
+        columns:
+          - name: ccn
+            data_tests: [not_null]
+          - name: drg_code
+            data_tests: [not_null]
+
+      - name: stg_cms__dme
+        description: "DME Supplier Utilization (~500K rows/year)"
+        columns:
+          - name: supplier_npi
+            data_tests: [not_null]
+
+      - name: stg_cms__ma_enrollment
+        description: "Medicare Advantage Enrollment by County (~50K rows/month)"
+        columns:
+          - name: county_fips
+            data_tests: [not_null]
+
+      - name: stg_cms__cost_reports_snf
+        description: "SNF Cost Reports (HCRIS)"
+        columns:
+          - name: ccn
+            data_tests: [not_null]
+
+      - name: stg_cms__cost_reports_hha
+        description: "HHA Cost Reports (HCRIS)"
+        columns:
+          - name: ccn
+            data_tests: [not_null]
+
+      - name: stg_cms__cost_reports_hospice
+        description: "Hospice Cost Reports (HCRIS)"
+        columns:
+          - name: ccn
+            data_tests: [not_null]
+
+  - name: reference_tier2
+    description: "Tier 2 reference tables"
+    schema: reference
+    tables:
+      - name: ref_hospital_general
+        description: "Hospital general information from Hospital Compare"
+        columns:
+          - name: ccn
+            data_tests: [unique, not_null]
+
+      - name: ref_asp_pricing
+        description: "Average Sales Price drug pricing"
+
+      - name: ref_ma_benchmarks
+        description: "MA county rate books / benchmarks"
+        columns:
+          - name: county_fips
+            data_tests: [not_null]
+
+      - name: ref_rxnorm
+        description: "RxNorm drug names and codes"
+        columns:
+          - name: rxcui
+            data_tests: [unique, not_null]
+
+      - name: ref_ndc_rxcui
+        description: "NDC to RXCUI crosswalk"
+
+      - name: ref_msdrg
+        description: "MS-DRG grouper"

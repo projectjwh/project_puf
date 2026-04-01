@@ -1,0 +1,95 @@
+# Prefect Orchestration — 8 Flows
+# Task dependencies, parallel/sequential execution
+
+direction: right
+
+# === Individual Source Flows ===
+ref_flow: load-reference-data {
+  style.fill: "#dcfce7"
+  style.stroke: "#16a34a"
+
+  phase1: "Phase 1 (parallel)" {
+    style.fill: "#bbf7d0"
+    fips: load-fips
+    taxonomy: load-taxonomy
+    icd10cm: load-icd10cm
+    icd10pcs: load-icd10pcs
+    hcpcs: load-hcpcs
+    msdrg: load-msdrg
+    ndc: load-ndc
+    pos_codes: load-pos-codes
+    zip_county: load-zip-county
+    cbsa: load-cbsa
+    ruca: load-ruca
+  }
+
+  phase2: "Phase 2 (sequential)" {
+    style.fill: "#a7f3d0"
+    rvu: load-rvu
+    wage: load-wage-index
+    ipps: load-ipps
+  }
+
+  phase1 -> phase2: "depends on\nreference codes"
+}
+
+nppes_flow: nppes-acquisition {
+  style.fill: "#dbeafe"
+  task: "run-nppes-pipeline\nretries=2, backoff=5m/15m"
+}
+
+pos_flow: pos-acquisition {
+  style.fill: "#dbeafe"
+  task: "run-pos-pipeline\nretries=2, backoff=5m/15m"
+}
+
+cost_flow: cost-reports-acquisition {
+  style.fill: "#dbeafe"
+  task: "run-cost-reports-pipeline"
+}
+
+# === Master Orchestration Flow ===
+util_flow: "utilization-full-refresh (master)" {
+  style.fill: "#fef3c7"
+  style.stroke: "#f59e0b"
+  style.stroke-width: 2
+
+  ingest: "Phase 1: Ingest (parallel)" {
+    style.fill: "#fed7aa"
+    partb: "run_partb\nretries=2, cache" {style.fill: "#93c5fd"}
+    partd: "run_partd\nretries=2, cache" {style.fill: "#93c5fd"}
+    geovar: "run_geovar\nretries=2, cache" {style.fill: "#93c5fd"}
+  }
+
+  dbt: "Phase 2: dbt run\ntag:intermediate tag:mart" {
+    style.fill: "#a7f3d0"
+  }
+
+  export: "Phase 3: Export Parquet\nmart → data/mart/" {
+    style.fill: "#c4b5fd"
+  }
+
+  ingest -> dbt: "all 3 complete"
+  dbt -> export: "models materialized"
+}
+
+# === Standalone Sub-Flows ===
+partb_flow: partb-utilization {
+  style.fill: "#e0e7ff"
+  task: "run_partb_pipeline\ntask_input_hash cache"
+}
+
+partd_flow: partd-prescribers {
+  style.fill: "#e0e7ff"
+  task: "run_partd_pipeline\ntask_input_hash cache"
+}
+
+geovar_flow: geovar-geographic-variation {
+  style.fill: "#e0e7ff"
+  task: "run_geovar_pipeline\ntask_input_hash cache"
+}
+
+# Relationships: master flow calls sub-flows
+util_flow.ingest.partb -> partb_flow: "invokes" {style.stroke-dash: 3; style.stroke: "#9ca3af"}
+util_flow.ingest.partd -> partd_flow: "invokes" {style.stroke-dash: 3; style.stroke: "#9ca3af"}
+util_flow.ingest.geovar -> geovar_flow: "invokes" {style.stroke-dash: 3; style.stroke: "#9ca3af"}
