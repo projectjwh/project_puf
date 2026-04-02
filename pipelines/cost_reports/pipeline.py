@@ -181,60 +181,97 @@ def run(
     data_year: int | None = None,
 ) -> dict[str, int]:
     """Execute the cost reports pipeline."""
+    import time
+
+    from pipelines._common.catalog import (
+        complete_pipeline_run,
+        record_pipeline_failure,
+        record_pipeline_run,
+        update_data_freshness,
+    )
+    from pipelines._common.validate import apply_quarantine
+
     run_date = run_date or date.today()
     data_year = data_year or run_date.year - 2  # ~2 year lag
     settings = get_pipeline_settings()
     results: dict[str, int] = {}
+    start_time = time.time()
+    file_hash = ""
 
-    log.info("cost_reports_start", run_date=str(run_date), data_year=data_year)
+    run_id = record_pipeline_run("cost_reports", run_date, data_year, stage="acquire")
 
-    # Acquire
-    if source_path:
-        landing = source_path if source_path.is_dir() else source_path.parent
-    else:
-        source_def = get_source("cost_reports")
-        landing = resolve_landing_path("cost_reports", run_date, data_year)
-        downloaded = download_file(source_def.url, landing)
-        if downloaded.suffix == ".zip":
-            extract_zip(downloaded, landing)
+    try:
+        log.info("cost_reports_start", run_date=str(run_date), data_year=data_year)
 
-    # Find RPT and NMRC files
-    rpt_files = list(landing.glob("*RPT*.CSV")) + list(landing.glob("*rpt*.csv"))
-    nmrc_files = list(landing.glob("*NMRC*.CSV")) + list(landing.glob("*nmrc*.csv"))
+        # Acquire
+        if source_path:
+            landing = source_path if source_path.is_dir() else source_path.parent
+        else:
+            source_def = get_source("cost_reports")
+            landing = resolve_landing_path("cost_reports", run_date, data_year)
+            downloaded = download_file(source_def.url, landing)
+            from pipelines._common.acquire import compute_hash
+            file_hash = compute_hash(downloaded)
+            if downloaded.suffix == ".zip":
+                extract_zip(downloaded, landing)
 
-    if not rpt_files:
-        raise FileNotFoundError(f"No RPT file found in {landing}")
+        # Find RPT and NMRC files
+        rpt_files = list(landing.glob("*RPT*.CSV")) + list(landing.glob("*rpt*.csv"))
+        nmrc_files = list(landing.glob("*NMRC*.CSV")) + list(landing.glob("*nmrc*.csv"))
 
-    rpt_path = rpt_files[0]
-    log.info("reading_rpt", path=str(rpt_path))
+        if not rpt_files:
+            raise FileNotFoundError(f"No RPT file found in {landing}")
 
-    # Read RPT file
-    rpt_df = pd.read_csv(rpt_path, dtype=str, low_memory=False)
-    rpt_df = rpt_df.rename(columns={k: v for k, v in RPT_COLUMN_MAPPING.items() if k in rpt_df.columns})
+        rpt_path = rpt_files[0]
+        log.info("reading_rpt", path=str(rpt_path))
 
-    # Validate
-    report = validate_cost_reports(rpt_df)
-    report.raise_if_blocked()
+        # Read RPT file
+        rpt_df = pd.read_csv(rpt_path, dtype=str, low_memory=False)
+        rpt_df = rpt_df.rename(columns={k: v for k, v in RPT_COLUMN_MAPPING.items() if k in rpt_df.columns})
 
-    # Transform
-    rpt_df = transform_cost_reports(rpt_df, data_year)
-    results["rpt_rows"] = len(rpt_df)
+        # Validate
+        report = validate_cost_reports(rpt_df)
+        report.run_id = run_id
+        report.raise_if_blocked()
+        report.persist()
 
-    # Extract financial metrics if NMRC file exists
-    if nmrc_files:
-        nmrc_path = nmrc_files[0]
-        log.info("reading_nmrc", path=str(nmrc_path))
-        nmrc_df = pd.read_csv(nmrc_path, dtype=str, low_memory=False)
-        rpt_df = extract_financial_metrics(rpt_df, nmrc_df)
-        log.info("financial_metrics_extracted")
+        # Apply quarantine
+        rpt_df = apply_quarantine(rpt_df, report, run_id)
 
-    # Write Parquet
-    parquet_path = (
-        PROJECT_ROOT / settings.storage.processed_base /
-        "cost_reports" / str(data_year) / "cost_reports.parquet"
-    )
-    write_parquet(rpt_df, parquet_path)
-    results["cost_reports_parquet"] = len(rpt_df)
+        # Transform
+        rpt_df = transform_cost_reports(rpt_df, data_year)
+        results["rpt_rows"] = len(rpt_df)
 
-    log.info("cost_reports_complete", **results)
-    return results
+        # Extract financial metrics if NMRC file exists
+        if nmrc_files:
+            nmrc_path = nmrc_files[0]
+            log.info("reading_nmrc", path=str(nmrc_path))
+            nmrc_df = pd.read_csv(nmrc_path, dtype=str, low_memory=False)
+            rpt_df = extract_financial_metrics(rpt_df, nmrc_df)
+            log.info("financial_metrics_extracted")
+
+        # Write Parquet
+        parquet_path = (
+            PROJECT_ROOT / settings.storage.processed_base /
+            "cost_reports" / str(data_year) / "cost_reports.parquet"
+        )
+        write_parquet(rpt_df, parquet_path)
+        results["cost_reports_parquet"] = len(rpt_df)
+
+        duration = time.time() - start_time
+        complete_pipeline_run(
+            run_id, "success", rows_processed=results.get("rpt_rows", 0),
+            rows_loaded=results.get("cost_reports_parquet", 0),
+            file_hash=file_hash, duration_seconds=duration,
+        )
+        update_data_freshness("cost_reports", data_year, file_hash)
+
+        log.info("cost_reports_complete", **results)
+        return results
+
+    except Exception as e:
+        duration = time.time() - start_time
+        complete_pipeline_run(run_id, "failed", error_message=str(e),
+                              duration_seconds=duration)
+        record_pipeline_failure(run_id, e)
+        raise

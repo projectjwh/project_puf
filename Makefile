@@ -54,6 +54,9 @@ clean: ## Remove build artifacts and caches
 	find . -type d -name .ruff_cache -exec rm -rf {} + 2>/dev/null || true
 	rm -rf build/ dist/ *.egg-info/
 
+seed-catalog: ## Seed catalog.sources from sources.yaml
+	python scripts/seed_catalog_sources.py
+
 db-shell: ## Open psql shell to PostgreSQL
 	docker compose -f config/docker-compose.yml exec postgres psql -U puf_admin -d puf
 

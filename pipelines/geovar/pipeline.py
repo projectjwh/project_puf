@@ -155,50 +155,86 @@ def run(
     data_year: int | None = None,
 ) -> dict[str, int]:
     """Execute the Geographic Variation pipeline."""
+    import time
+
+    from pipelines._common.catalog import (
+        complete_pipeline_run,
+        record_pipeline_failure,
+        record_pipeline_run,
+        update_data_freshness,
+    )
+    from pipelines._common.validate import apply_quarantine
+
     run_date = run_date or date.today()
     data_year = data_year or run_date.year - 2
     settings = get_pipeline_settings()
     results: dict[str, int] = {}
+    start_time = time.time()
+    file_hash = ""
 
-    log.info("geovar_start", run_date=str(run_date), data_year=data_year)
+    run_id = record_pipeline_run("geovar", run_date, data_year, stage="acquire")
 
-    # Acquire
-    if source_path:
-        csv_path = source_path
-    else:
-        source_def = get_source("geovar")
-        landing = resolve_landing_path("geovar", run_date, data_year)
-        csv_path = download_file(source_def.url, landing)
+    try:
+        log.info("geovar_start", run_date=str(run_date), data_year=data_year)
 
-    log.info("reading_csv", path=str(csv_path))
+        # Acquire
+        if source_path:
+            csv_path = source_path
+        else:
+            source_def = get_source("geovar")
+            landing = resolve_landing_path("geovar", run_date, data_year)
+            csv_path = download_file(source_def.url, landing)
+            from pipelines._common.acquire import compute_hash
+            file_hash = compute_hash(csv_path)
 
-    # Read
-    df = pd.read_csv(csv_path, dtype=str, low_memory=False)
-    df = df.rename(columns={k: v for k, v in COLUMN_MAPPING.items() if k in df.columns})
-    log.info("csv_read", rows=len(df))
+        log.info("reading_csv", path=str(csv_path))
 
-    # Validate
-    report = validate_geovar(df)
-    report.raise_if_blocked()
+        # Read
+        df = pd.read_csv(csv_path, dtype=str, low_memory=False)
+        df = df.rename(columns={k: v for k, v in COLUMN_MAPPING.items() if k in df.columns})
+        log.info("csv_read", rows=len(df))
 
-    # Transform
-    df = transform_geovar(df, data_year)
-    results["geovar_rows"] = len(df)
+        # Validate
+        report = validate_geovar(df)
+        report.run_id = run_id
+        report.raise_if_blocked()
+        report.persist()
 
-    # Write Parquet
-    parquet_path = (
-        PROJECT_ROOT / settings.storage.processed_base
-        / "geovar" / str(data_year) / "geographic_variation.parquet"
-    )
-    write_parquet(df, parquet_path)
-    results["geovar_parquet"] = len(df)
+        # Apply quarantine
+        df = apply_quarantine(df, report, run_id)
 
-    # Load to staging
-    out_cols = [c for c in STAGING_COLUMNS if c in df.columns]
-    rows = copy_dataframe_to_pg(
-        df[out_cols], "stg_cms__geographic_variation", "staging", if_exists="append",
-    )
-    results["stg_geovar"] = rows
+        # Transform
+        df = transform_geovar(df, data_year)
+        results["geovar_rows"] = len(df)
 
-    log.info("geovar_complete", **results)
-    return results
+        # Write Parquet
+        parquet_path = (
+            PROJECT_ROOT / settings.storage.processed_base
+            / "geovar" / str(data_year) / "geographic_variation.parquet"
+        )
+        write_parquet(df, parquet_path)
+        results["geovar_parquet"] = len(df)
+
+        # Load to staging
+        out_cols = [c for c in STAGING_COLUMNS if c in df.columns]
+        rows = copy_dataframe_to_pg(
+            df[out_cols], "stg_cms__geographic_variation", "staging", if_exists="append",
+        )
+        results["stg_geovar"] = rows
+
+        duration = time.time() - start_time
+        complete_pipeline_run(
+            run_id, "success", rows_processed=results.get("geovar_rows", 0),
+            rows_loaded=rows, file_hash=file_hash, duration_seconds=duration,
+        )
+        update_data_freshness("geovar", data_year, file_hash)
+
+        log.info("geovar_complete", **results)
+        return results
+
+    except Exception as e:
+        duration = time.time() - start_time
+        complete_pipeline_run(run_id, "failed", error_message=str(e),
+                              duration_seconds=duration)
+        record_pipeline_failure(run_id, e)
+        raise

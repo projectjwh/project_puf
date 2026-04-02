@@ -159,57 +159,93 @@ def run(
     data_year: int | None = None,
 ) -> dict[str, int]:
     """Execute the Part D prescribers pipeline."""
+    import time
+
+    from pipelines._common.catalog import (
+        complete_pipeline_run,
+        record_pipeline_failure,
+        record_pipeline_run,
+        update_data_freshness,
+    )
+    from pipelines._common.validate import apply_quarantine
+
     run_date = run_date or date.today()
     data_year = data_year or run_date.year - 2
     settings = get_pipeline_settings()
     results: dict[str, int] = {}
+    start_time = time.time()
+    file_hash = ""
 
-    log.info("partd_start", run_date=str(run_date), data_year=data_year)
+    run_id = record_pipeline_run("partd", run_date, data_year, stage="acquire")
 
-    # Acquire
-    if source_path:
-        csv_path = source_path
-    else:
-        source_def = get_source("partd")
-        landing = resolve_landing_path("partd", run_date, data_year)
-        downloaded = download_file(source_def.url, landing)
-        if downloaded.suffix == ".zip":
-            extract_zip(downloaded, landing)
-            csvs = list(landing.glob("*.csv"))
-            csv_path = max(csvs, key=lambda p: p.stat().st_size)
+    try:
+        log.info("partd_start", run_date=str(run_date), data_year=data_year)
+
+        # Acquire
+        if source_path:
+            csv_path = source_path
         else:
-            csv_path = downloaded
+            source_def = get_source("partd")
+            landing = resolve_landing_path("partd", run_date, data_year)
+            downloaded = download_file(source_def.url, landing)
+            from pipelines._common.acquire import compute_hash
+            file_hash = compute_hash(downloaded)
+            if downloaded.suffix == ".zip":
+                extract_zip(downloaded, landing)
+                csvs = list(landing.glob("*.csv"))
+                csv_path = max(csvs, key=lambda p: p.stat().st_size)
+            else:
+                csv_path = downloaded
 
-    log.info("reading_csv", path=str(csv_path))
+        log.info("reading_csv", path=str(csv_path))
 
-    # Read
-    df = pd.read_csv(csv_path, dtype=str, low_memory=False)
-    df = df.rename(columns={k: v for k, v in COLUMN_MAPPING.items() if k in df.columns})
-    log.info("csv_read", rows=len(df), columns=len(df.columns))
+        # Read
+        df = pd.read_csv(csv_path, dtype=str, low_memory=False)
+        df = df.rename(columns={k: v for k, v in COLUMN_MAPPING.items() if k in df.columns})
+        log.info("csv_read", rows=len(df), columns=len(df.columns))
 
-    # Validate
-    report = validate_partd(df)
-    report.raise_if_blocked()
-    log.info("validation_passed", warnings=len(report.warnings))
+        # Validate
+        report = validate_partd(df)
+        report.run_id = run_id
+        report.raise_if_blocked()
+        report.persist()
+        log.info("validation_passed", warnings=len(report.warnings))
 
-    # Transform
-    df = transform_partd(df, data_year)
-    results["partd_rows"] = len(df)
+        # Apply quarantine
+        df = apply_quarantine(df, report, run_id)
 
-    # Write Parquet
-    parquet_path = (
-        PROJECT_ROOT / settings.storage.processed_base
-        / "partd" / str(data_year) / "part_d_prescribers.parquet"
-    )
-    write_parquet(df, parquet_path)
-    results["partd_parquet"] = len(df)
+        # Transform
+        df = transform_partd(df, data_year)
+        results["partd_rows"] = len(df)
 
-    # Load to staging (PostgreSQL)
-    out_cols = [c for c in STAGING_COLUMNS if c in df.columns]
-    rows = copy_dataframe_to_pg(
-        df[out_cols], "stg_cms__part_d_prescribers", "staging", if_exists="append",
-    )
-    results["stg_part_d"] = rows
+        # Write Parquet
+        parquet_path = (
+            PROJECT_ROOT / settings.storage.processed_base
+            / "partd" / str(data_year) / "part_d_prescribers.parquet"
+        )
+        write_parquet(df, parquet_path)
+        results["partd_parquet"] = len(df)
 
-    log.info("partd_complete", **results)
-    return results
+        # Load to staging (PostgreSQL)
+        out_cols = [c for c in STAGING_COLUMNS if c in df.columns]
+        rows = copy_dataframe_to_pg(
+            df[out_cols], "stg_cms__part_d_prescribers", "staging", if_exists="append",
+        )
+        results["stg_part_d"] = rows
+
+        duration = time.time() - start_time
+        complete_pipeline_run(
+            run_id, "success", rows_processed=results.get("partd_rows", 0),
+            rows_loaded=rows, file_hash=file_hash, duration_seconds=duration,
+        )
+        update_data_freshness("partd", data_year, file_hash)
+
+        log.info("partd_complete", **results)
+        return results
+
+    except Exception as e:
+        duration = time.time() - start_time
+        complete_pipeline_run(run_id, "failed", error_message=str(e),
+                              duration_seconds=duration)
+        record_pipeline_failure(run_id, e)
+        raise

@@ -117,41 +117,77 @@ def transform_pos(df: pd.DataFrame) -> pd.DataFrame:
 
 def run(source_path: Path | None = None, run_date: date | None = None) -> dict[str, int]:
     """Execute the POS facilities pipeline."""
+    import time
+
+    from pipelines._common.catalog import (
+        complete_pipeline_run,
+        record_pipeline_failure,
+        record_pipeline_run,
+        update_data_freshness,
+    )
+    from pipelines._common.validate import apply_quarantine
+
     run_date = run_date or date.today()
     settings = get_pipeline_settings()
     results: dict[str, int] = {}
+    start_time = time.time()
+    file_hash = ""
 
-    log.info("pos_pipeline_start", run_date=str(run_date))
+    run_id = record_pipeline_run("pos", run_date, stage="acquire")
 
-    # Acquire
-    if source_path:
-        data_file = source_path
-    else:
-        source_def = get_source("pos")
-        landing = resolve_landing_path("pos", run_date)
-        data_file = download_file(source_def.url, landing)
+    try:
+        log.info("pos_pipeline_start", run_date=str(run_date))
 
-    # Read
-    df = pd.read_csv(data_file, dtype=str, low_memory=False)
-    df = df.rename(columns={k: v for k, v in COLUMN_MAPPING.items() if k in df.columns})
-    log.info("csv_read", rows=len(df))
+        # Acquire
+        if source_path:
+            data_file = source_path
+        else:
+            source_def = get_source("pos")
+            landing = resolve_landing_path("pos", run_date)
+            data_file = download_file(source_def.url, landing)
+            from pipelines._common.acquire import compute_hash
+            file_hash = compute_hash(data_file)
 
-    # Validate
-    report = validate_pos(df)
-    report.raise_if_blocked()
+        # Read
+        df = pd.read_csv(data_file, dtype=str, low_memory=False)
+        df = df.rename(columns={k: v for k, v in COLUMN_MAPPING.items() if k in df.columns})
+        log.info("csv_read", rows=len(df))
 
-    # Transform
-    df = transform_pos(df)
+        # Validate
+        report = validate_pos(df)
+        report.run_id = run_id
+        report.raise_if_blocked()
+        report.persist()
 
-    # Write Parquet
-    parquet_path = PROJECT_ROOT / settings.storage.processed_base / "pos" / "pos_facilities.parquet"
-    write_parquet(df, parquet_path)
-    results["pos_parquet"] = len(df)
+        # Apply quarantine
+        df = apply_quarantine(df, report, run_id)
 
-    # Load to PostgreSQL
-    out_cols = [c for c in REF_POS_COLUMNS if c in df.columns]
-    rows = copy_dataframe_to_pg(df[out_cols], "ref_pos_facilities", "reference", if_exists="replace")
-    results["ref_pos_facilities"] = rows
+        # Transform
+        df = transform_pos(df)
 
-    log.info("pos_pipeline_complete", **results)
-    return results
+        # Write Parquet
+        parquet_path = PROJECT_ROOT / settings.storage.processed_base / "pos" / "pos_facilities.parquet"
+        write_parquet(df, parquet_path)
+        results["pos_parquet"] = len(df)
+
+        # Load to PostgreSQL
+        out_cols = [c for c in REF_POS_COLUMNS if c in df.columns]
+        rows = copy_dataframe_to_pg(df[out_cols], "ref_pos_facilities", "reference", if_exists="replace")
+        results["ref_pos_facilities"] = rows
+
+        duration = time.time() - start_time
+        complete_pipeline_run(
+            run_id, "success", rows_processed=results.get("pos_parquet", 0),
+            rows_loaded=rows, file_hash=file_hash, duration_seconds=duration,
+        )
+        update_data_freshness("pos", file_hash=file_hash)
+
+        log.info("pos_pipeline_complete", **results)
+        return results
+
+    except Exception as e:
+        duration = time.time() - start_time
+        complete_pipeline_run(run_id, "failed", error_message=str(e),
+                              duration_seconds=duration)
+        record_pipeline_failure(run_id, e)
+        raise

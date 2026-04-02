@@ -149,21 +149,44 @@ def read_parquet(path: str | Path, sql: str | None = None) -> pd.DataFrame:
         return conn.execute(f"SELECT * FROM read_parquet('{path_str}')").fetchdf()
 
 
-def write_parquet(df: pd.DataFrame, path: str | Path) -> Path:
-    """Write a DataFrame to Parquet using DuckDB (ZSTD compression).
+def write_parquet(
+    df: pd.DataFrame,
+    path: str | Path,
+    metadata: dict[str, str] | None = None,
+) -> Path:
+    """Write a DataFrame to Parquet with ZSTD compression and optional lineage metadata.
 
     Creates parent directories if needed. Returns the output path.
+
+    Args:
+        df: DataFrame to write.
+        path: Output path.
+        metadata: Optional key-value pairs to embed in Parquet file metadata
+                  (e.g., puf.source_name, puf.pipeline_run_id).
     """
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+
     settings = get_pipeline_settings()
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
 
-    conn = get_duckdb_connection()
-    conn.register("df", df)
-    conn.execute(
-        f"COPY df TO '{path}' (FORMAT PARQUET, COMPRESSION '{settings.parquet.compression}', "
-        f"ROW_GROUP_SIZE {settings.parquet.row_group_size})"
+    table = pa.Table.from_pandas(df)
+
+    # Embed lineage metadata if provided
+    if metadata:
+        existing_meta = table.schema.metadata or {}
+        merged = {**existing_meta, **{k.encode(): v.encode() for k, v in metadata.items()}}
+        table = table.replace_schema_metadata(merged)
+
+    pq.write_table(
+        table,
+        str(path),
+        compression=settings.parquet.compression,
+        row_group_size=settings.parquet.row_group_size,
     )
 
-    log.info("parquet_written", path=str(path), rows=len(df), compression=settings.parquet.compression)
+    log.info("parquet_written", path=str(path), rows=len(df),
+             compression=settings.parquet.compression,
+             has_metadata=bool(metadata))
     return path
