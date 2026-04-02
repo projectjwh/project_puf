@@ -1,8 +1,8 @@
 # Technical Design Catalog — Project PUF
 
 > **Public Healthcare Data Repository**
-> Version 0.1.0 — Phase 1 Complete
-> Last updated: 2026-03-05
+> Version 0.2.0 — Phase 2 In Progress
+> Last updated: 2026-04-02
 
 ---
 
@@ -11,14 +11,16 @@
 | Metric | Count |
 |--------|-------|
 | Data sources registered | 48 across 11 categories |
-| Python data pipelines | 48 source-specific + 7 shared modules |
+| Python data pipelines | 48 source-specific + 8 shared modules |
 | Prefect orchestration flows | 8 |
-| Alembic database migrations | 10 |
-| dbt SQL models | 40 (11 staging, 13 intermediate, 16 mart) |
-| API endpoints | 28 (all GET, read-only) |
+| Alembic database migrations | 11 |
+| dbt SQL models | 53 (16 staging, 16 intermediate, 20 mart, 1 snapshot) |
+| API endpoints | 32 (all GET, read-only) |
 | Frontend pages | 8 + root redirect |
-| Reusable UI components | 4 |
-| Automated tests | 258 (last run: 258 passed, 11 skipped) |
+| Reusable UI components | 5 |
+| Automated tests | 364 (last run: 364 passed, 2 skipped) |
+| CI/CD | GitHub Actions (lint + typecheck + test) |
+| Pipeline integrity | Full catalog tracking on all Tier 1 pipelines |
 
 ---
 
@@ -68,6 +70,8 @@ Full diagram: [`diagrams/system-architecture.d2`](diagrams/system-architecture.d
 | 10 | [Testing](10-testing.md) | 258 tests across 16 files, markers, fixtures, config |
 | 11 | [Operations](11-operations.md) | Config management, security, observability, governance |
 | 12 | [Source Inventory](12-source-inventory.md) | All 48 sources across 11 categories |
+| 13 | [Pipeline Integrity](13-pipeline-integrity.md) | Catalog tracking, validation persistence, quarantine, download resilience |
+| 14 | [Analytical Domains](14-analytical-domains.md) | UniProvDB SCD, Provider Profiles+, Procedure Analytics, Population, Geography |
 | — | [Appendices](appendices.md) | Directory tree, naming conventions, glossary |
 
 ---

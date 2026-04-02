@@ -220,13 +220,14 @@ Full interactive docs at http://localhost:8000/docs (Swagger UI).
 
 ## dbt Models
 
-47 models in 3 layers:
+53 models in 3 layers + snapshots:
 
 | Layer | Count | Materialization | Purpose |
 |-------|-------|----------------|---------|
+| Snapshots | 1 | dbt snapshot (SCD2) | Provider history change tracking |
 | Staging | 16 | view / ephemeral | 1:1 schema contracts on pipeline output |
-| Intermediate | 13 | table | Cross-source joins, aggregations |
-| Marts | 16+ | table (indexed) | Pre-shaped for API, <10ms lookups |
+| Intermediate | 16 | table | Cross-source joins, aggregations, procedure detail |
+| Marts | 20 | table (indexed) | Pre-shaped for API, <10ms lookups |
 
 Key cross-source joins:
 - **Provider enrichment**: NPPES + Taxonomy + FIPS (NPI hub)
@@ -244,7 +245,7 @@ make dbt-test   # Run column tests (unique, not_null, accepted_values)
 ### Tests
 
 ```bash
-make test          # Unit tests only (299 passing)
+make test          # Unit tests only (364 passing)
 make test-all      # Include integration tests
 make test-cov      # Coverage report
 ```
@@ -265,7 +266,7 @@ GitHub Actions runs on every push to `main` and every PR:
 |-----|------|------|
 | `lint` | ruff | Lint + format check |
 | `typecheck` | mypy | Type annotations |
-| `test` | pytest | 299 unit tests |
+| `test` | pytest | 364 unit tests |
 
 ### Project Structure
 
