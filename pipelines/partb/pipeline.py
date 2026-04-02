@@ -217,8 +217,18 @@ def run(
 
         # Read
         df = pd.read_csv(csv_path, dtype=str, low_memory=False)
-        df = df.rename(columns={k: v for k, v in COLUMN_MAPPING.items() if k in df.columns})
         log.info("csv_read", rows=len(df), columns=len(df.columns))
+
+        # Contract validation (on raw columns, before rename)
+        from pipelines._common.validate import validate_against_contract
+
+        contract_report = ValidationReport(source="partb", run_id=run_id)
+        validate_against_contract(df, "partb", data_year, contract_report)
+        contract_report.raise_if_blocked()
+        contract_report.persist()
+
+        # Rename columns
+        df = df.rename(columns={k: v for k, v in COLUMN_MAPPING.items() if k in df.columns})
 
         # Validate
         report = validate_partb(df)

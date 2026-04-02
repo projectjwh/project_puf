@@ -1,0 +1,99 @@
+# Data Contract: Medicare Part B Physician/Supplier Utilization
+# Source: CMS Medicare Physician & Other Practitioners
+# Publisher: CMS
+source: partb
+version: "2024.1"
+grain: [rendering_npi, hcpcs_code, place_of_service, data_year]
+
+schemas:
+  default:
+    columns:
+      Rndrng_NPI:
+        type: str
+        required: true
+        format: "^\\d{10}$"
+        maps_to: rendering_npi
+      Rndrng_Prvdr_Last_Org_Name:
+        type: str
+        required: false
+        maps_to: rendering_npi_name
+      Rndrng_Prvdr_Type:
+        type: str
+        required: false
+        maps_to: provider_type
+      Rndrng_Prvdr_Gndr:
+        type: str
+        required: false
+        maps_to: provider_gender
+      Rndrng_Prvdr_Ent_Cd:
+        type: str
+        required: false
+        maps_to: entity_type
+      Rndrng_Prvdr_St:
+        type: str
+        required: false
+        maps_to: provider_state
+      Rndrng_Prvdr_State_Abrvtn:
+        type: str
+        required: false
+        maps_to: provider_state
+      Rndrng_Prvdr_Zip5:
+        type: str
+        required: false
+        maps_to: provider_zip5
+      Rndrng_Prvdr_RUCA:
+        type: str
+        required: false
+        maps_to: provider_ruca
+      Rndrng_Prvdr_Mdcr_Prtcptg_Ind:
+        type: str
+        required: false
+        maps_to: medicare_participation
+      HCPCS_Cd:
+        type: str
+        required: true
+        maps_to: hcpcs_code
+      HCPCS_Desc:
+        type: str
+        required: false
+        maps_to: hcpcs_description
+      HCPCS_Drug_Ind:
+        type: str
+        required: false
+        maps_to: hcpcs_drug_indicator
+      Place_Of_Srvc:
+        type: str
+        required: false
+        maps_to: place_of_service
+      Tot_Srvcs:
+        type: str
+        required: false
+        maps_to: number_of_services
+      Tot_Benes:
+        type: str
+        required: false
+        maps_to: number_of_beneficiaries
+      Tot_Bene_Day_Srvcs:
+        type: str
+        required: false
+        maps_to: number_of_distinct_beneficiaries_per_day
+      Avg_Sbmtd_Chrg:
+        type: str
+        required: false
+        maps_to: avg_submitted_charge
+      Avg_Mdcr_Alowd_Amt:
+        type: str
+        required: false
+        maps_to: avg_medicare_allowed
+      Avg_Mdcr_Pymt_Amt:
+        type: str
+        required: false
+        maps_to: avg_medicare_payment
+      Avg_Mdcr_Stdzd_Amt:
+        type: str
+        required: false
+        maps_to: avg_medicare_standardized
+    row_count:
+      min: 8000000
+      max: 13000000
+      severity: WARN

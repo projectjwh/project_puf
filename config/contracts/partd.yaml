@@ -1,0 +1,111 @@
+# Data Contract: Medicare Part D Prescribers
+# Source: CMS Medicare Part D Prescribers
+# Publisher: CMS
+source: partd
+version: "2024.1"
+grain: [prescriber_npi, brand_name, generic_name, data_year]
+
+schemas:
+  default:
+    columns:
+      Prscrbr_NPI:
+        type: str
+        required: true
+        format: "^\\d{10}$"
+        maps_to: prescriber_npi
+      Prscrbr_Last_Org_Name:
+        type: str
+        required: false
+        maps_to: prescriber_last_name
+      Prscrbr_First_Name:
+        type: str
+        required: false
+        maps_to: prescriber_first_name
+      Prscrbr_Type:
+        type: str
+        required: false
+        maps_to: specialty_description
+      Prscrbr_Type_Src:
+        type: str
+        required: false
+        maps_to: specialty_source
+      Prscrbr_St:
+        type: str
+        required: false
+        maps_to: prescriber_state
+      Prscrbr_State_Abrvtn:
+        type: str
+        required: false
+        maps_to: prescriber_state
+      Prscrbr_Gndr:
+        type: str
+        required: false
+        maps_to: prescriber_gender
+      Prscrbr_Ent_Cd:
+        type: str
+        required: false
+        maps_to: entity_type
+      Brnd_Name:
+        type: str
+        required: true
+        maps_to: drug_name
+      Gnrc_Name:
+        type: str
+        required: false
+        maps_to: generic_name
+      Tot_Clms:
+        type: str
+        required: false
+        maps_to: total_claim_count
+      Tot_Day_Suply:
+        type: str
+        required: false
+        maps_to: total_day_supply
+      Tot_Drug_Cst:
+        type: str
+        required: false
+        maps_to: total_drug_cost
+      Tot_Benes:
+        type: str
+        required: false
+        maps_to: total_beneficiary_count
+      GE65_Sprsn_Flag:
+        type: str
+        required: false
+        maps_to: ge65_suppress_flag
+      GE65_Tot_Clms:
+        type: str
+        required: false
+        maps_to: ge65_total_claims
+      GE65_Tot_Drug_Cst:
+        type: str
+        required: false
+        maps_to: ge65_total_drug_cost
+      Opioid_Drug_Flag:
+        type: str
+        required: false
+        maps_to: is_opioid_flag
+      Opioid_Tot_Clms:
+        type: str
+        required: false
+        maps_to: opioid_claim_count
+      Opioid_Prscrbr_Rate:
+        type: str
+        required: false
+        maps_to: opioid_prescriber_rate
+      Opioid_LA_Drug_Flag:
+        type: str
+        required: false
+        maps_to: is_long_acting_opioid_flag
+      Antbtc_Drug_Flag:
+        type: str
+        required: false
+        maps_to: is_antibiotic_flag
+      Antpsychtc_Drug_Flag:
+        type: str
+        required: false
+        maps_to: is_antipsychotic_flag
+    row_count:
+      min: 20000000
+      max: 30000000
+      severity: WARN

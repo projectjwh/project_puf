@@ -23,98 +23,98 @@ log = get_logger(source="reference_flow")
 # ---------------------------------------------------------------------------
 
 
-@task(name="load-fips", retries=2, retry_delay_seconds=60)
+@task(name="load-fips", retries=2, retry_delay_seconds=60, tags=["db-write"])
 def load_fips(run_date: date | None = None) -> int:
     from pipelines.fips.pipeline import run
 
     return run(run_date=run_date)
 
 
-@task(name="load-taxonomy", retries=2, retry_delay_seconds=60)
+@task(name="load-taxonomy", retries=2, retry_delay_seconds=60, tags=["db-write"])
 def load_taxonomy(run_date: date | None = None) -> int:
     from pipelines.taxonomy.pipeline import run
 
     return run(run_date=run_date)
 
 
-@task(name="load-icd10cm", retries=2, retry_delay_seconds=60)
+@task(name="load-icd10cm", retries=2, retry_delay_seconds=60, tags=["db-write"])
 def load_icd10cm(run_date: date | None = None) -> int:
     from pipelines.icd10cm.pipeline import run
 
     return run(run_date=run_date)
 
 
-@task(name="load-icd10pcs", retries=2, retry_delay_seconds=60)
+@task(name="load-icd10pcs", retries=2, retry_delay_seconds=60, tags=["db-write"])
 def load_icd10pcs(run_date: date | None = None) -> int:
     from pipelines.icd10pcs.pipeline import run
 
     return run(run_date=run_date)
 
 
-@task(name="load-hcpcs", retries=2, retry_delay_seconds=60)
+@task(name="load-hcpcs", retries=2, retry_delay_seconds=60, tags=["db-write"])
 def load_hcpcs(run_date: date | None = None) -> int:
     from pipelines.hcpcs.pipeline import run
 
     return run(run_date=run_date)
 
 
-@task(name="load-msdrg", retries=2, retry_delay_seconds=60)
+@task(name="load-msdrg", retries=2, retry_delay_seconds=60, tags=["db-write"])
 def load_msdrg(run_date: date | None = None) -> int:
     from pipelines.msdrg.pipeline import run
 
     return run(run_date=run_date)
 
 
-@task(name="load-ndc", retries=2, retry_delay_seconds=60)
+@task(name="load-ndc", retries=2, retry_delay_seconds=60, tags=["db-write"])
 def load_ndc(run_date: date | None = None) -> int:
     from pipelines.ndc.pipeline import run
 
     return run(run_date=run_date)
 
 
-@task(name="load-pos-codes", retries=2, retry_delay_seconds=60)
+@task(name="load-pos-codes", retries=2, retry_delay_seconds=60, tags=["db-write"])
 def load_pos_codes(run_date: date | None = None) -> int:
     from pipelines.pos_codes.pipeline import run
 
     return run(run_date=run_date)
 
 
-@task(name="load-zip-county", retries=2, retry_delay_seconds=60)
+@task(name="load-zip-county", retries=2, retry_delay_seconds=60, tags=["db-write"])
 def load_zip_county(run_date: date | None = None) -> int:
     from pipelines.zip_county.pipeline import run
 
     return run(run_date=run_date)
 
 
-@task(name="load-cbsa", retries=2, retry_delay_seconds=60)
+@task(name="load-cbsa", retries=2, retry_delay_seconds=60, tags=["db-write"])
 def load_cbsa(run_date: date | None = None) -> int:
     from pipelines.cbsa.pipeline import run
 
     return run(run_date=run_date)
 
 
-@task(name="load-ruca", retries=2, retry_delay_seconds=60)
+@task(name="load-ruca", retries=2, retry_delay_seconds=60, tags=["db-write"])
 def load_ruca(run_date: date | None = None) -> int:
     from pipelines.ruca.pipeline import run
 
     return run(run_date=run_date)
 
 
-@task(name="load-rvu", retries=2, retry_delay_seconds=60)
+@task(name="load-rvu", retries=2, retry_delay_seconds=60, tags=["db-write"])
 def load_rvu(run_date: date | None = None) -> int:
     from pipelines.rvu.pipeline import run
 
     return run(run_date=run_date)
 
 
-@task(name="load-wage-index", retries=2, retry_delay_seconds=60)
+@task(name="load-wage-index", retries=2, retry_delay_seconds=60, tags=["db-write"])
 def load_wage_index(run_date: date | None = None) -> int:
     from pipelines.wage_index.pipeline import run
 
     return run(run_date=run_date)
 
 
-@task(name="load-ipps", retries=2, retry_delay_seconds=60)
+@task(name="load-ipps", retries=2, retry_delay_seconds=60, tags=["db-write"])
 def load_ipps(run_date: date | None = None) -> int:
     from pipelines.ipps.pipeline import run
 

@@ -1,0 +1,90 @@
+# Data Contract: Provider of Services (POS) Facilities
+# Source: CMS Provider of Services Current Files
+# Publisher: CMS
+source: pos
+version: "2024.1"
+grain: [ccn]
+
+schemas:
+  default:
+    columns:
+      PRVDR_NUM:
+        type: str
+        required: true
+        maps_to: ccn
+      FAC_NAME:
+        type: str
+        required: true
+        maps_to: facility_name
+      GNRL_FAC_TYPE_DESC:
+        type: str
+        required: false
+        maps_to: facility_type
+      GNRL_CNTL_TYPE_DESC:
+        type: str
+        required: false
+        maps_to: ownership_type
+      GNRL_CNTL_TYPE_CD:
+        type: str
+        required: false
+        maps_to: ownership_code
+      ST_ADR:
+        type: str
+        required: false
+        maps_to: street_address
+      CITY_NAME:
+        type: str
+        required: false
+        maps_to: city
+      STATE_CD:
+        type: str
+        required: false
+        maps_to: state
+      ZIP_CD:
+        type: str
+        required: false
+        maps_to: zip_full
+      COUNTY_CD:
+        type: str
+        required: false
+        maps_to: county_code
+      PHNE_NUM:
+        type: str
+        required: false
+        maps_to: phone
+      BED_CNT:
+        type: str
+        required: false
+        maps_to: bed_count
+      TOT_BED_CNT:
+        type: str
+        required: false
+        maps_to: bed_count_total
+      CRTFCTN_DT:
+        type: str
+        required: false
+        maps_to: certification_date
+      TRMNTN_DT:
+        type: str
+        required: false
+        maps_to: termination_date
+      MDCR_PRTCPTN_CD:
+        type: str
+        required: false
+        maps_to: medicare_participation_code
+      MDCD_PRTCPTN_CD:
+        type: str
+        required: false
+        maps_to: medicaid_participation_code
+      PRVDR_CTGRY_CD:
+        type: str
+        required: false
+        maps_to: facility_type_code
+      PRVDR_CTGRY_SBTYP_CD:
+        type: str
+        required: false
+        maps_to: facility_subtype_code
+    row_count:
+      min: 100000
+      max: 500000
+      severity: WARN

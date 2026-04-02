@@ -1,0 +1,110 @@
+# Data Contract: Medicare Geographic Variation
+# Source: CMS Medicare Geographic Variation
+# Publisher: CMS
+source: geovar
+version: "2024.1"
+grain: [bene_geo_lvl, state_fips, county_fips, data_year]
+
+schemas:
+  default:
+    columns:
+      Bene_Geo_Lvl:
+        type: str
+        required: true
+        maps_to: bene_geo_lvl
+      Bene_Geo_Desc:
+        type: str
+        required: false
+        maps_to: bene_geo_desc
+      Bene_Geo_Cd:
+        type: str
+        required: false
+        maps_to: bene_geo_cd
+      Tot_Benes:
+        type: str
+        required: false
+        maps_to: total_beneficiaries
+      FFS_Benes:
+        type: str
+        required: false
+        maps_to: total_beneficiaries_ffs
+      MA_Benes:
+        type: str
+        required: false
+        maps_to: total_beneficiaries_ma
+      MA_Prtcptn_Rate:
+        type: str
+        required: false
+        maps_to: ma_participation_rate
+      Tot_Actual_Csts:
+        type: str
+        required: false
+        maps_to: total_actual_costs
+      Actual_Per_Cpta_Csts:
+        type: str
+        required: false
+        maps_to: actual_per_capita_costs
+      Stdzd_Per_Cpta_Csts:
+        type: str
+        required: false
+        maps_to: standardized_per_capita_costs
+      IP_Per_Cpta_Csts:
+        type: str
+        required: false
+        maps_to: ip_per_capita_costs
+      PAC_Per_Cpta_Csts:
+        type: str
+        required: false
+        maps_to: op_per_capita_costs
+      OP_Per_Cpta_Csts:
+        type: str
+        required: false
+        maps_to: op_per_capita_costs
+      SNF_Per_Cpta_Csts:
+        type: str
+        required: false
+        maps_to: snf_per_capita_costs
+      HHA_Per_Cpta_Csts:
+        type: str
+        required: false
+        maps_to: hha_per_capita_costs
+      Hospice_Per_Cpta_Csts:
+        type: str
+        required: false
+        maps_to: hospice_per_capita_costs
+      PrtB_Per_Cpta_Csts:
+        type: str
+        required: false
+        maps_to: partb_per_capita_costs
+      PrtD_Per_Cpta_Csts:
+        type: str
+        required: false
+        maps_to: partd_per_capita_costs
+      DME_Per_Cpta_Csts:
+        type: str
+        required: false
+        maps_to: dme_per_capita_costs
+      IP_Cvrd_Stays_Per_1000:
+        type: str
+        required: false
+        maps_to: ip_covered_stays_per_1000
+      OP_Visits_Per_1000:
+        type: str
+        required: false
+        maps_to: op_visits_per_1000
+      ER_Visits_Per_1000:
+        type: str
+        required: false
+        maps_to: er_visits_per_1000
+      Readmsn_Rate:
+        type: str
+        required: false
+        maps_to: readmission_rate
+      ER_Visits_Rate:
+        type: str
+        required: false
+        maps_to: ed_visit_rate
+    row_count:
+      min: 3000
+      max: 5000
+      severity: WARN

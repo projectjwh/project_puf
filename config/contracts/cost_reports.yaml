@@ -1,0 +1,82 @@
+# Data Contract: Hospital Cost Reports (HCRIS)
+# Source: CMS Hospital Cost Report Information System
+# Publisher: CMS
+source: cost_reports
+version: "2024.1"
+grain: [rpt_rec_num]
+
+schemas:
+  default:
+    columns:
+      RPT_REC_NUM:
+        type: str
+        required: true
+        maps_to: rpt_rec_num
+      PRVDR_CTRL_TYPE_CD:
+        type: str
+        required: false
+        maps_to: control_type_code
+      PRVDR_NUM:
+        type: str
+        required: true
+        maps_to: ccn
+      RPT_STUS_CD:
+        type: str
+        required: false
+        maps_to: report_status_code
+      FY_BGN_DT:
+        type: str
+        required: false
+        maps_to: fiscal_year_begin
+      FY_END_DT:
+        type: str
+        required: false
+        maps_to: fiscal_year_end
+      PROC_DT:
+        type: str
+        required: false
+        maps_to: process_date
+      INITL_RPT_SW:
+        type: str
+        required: false
+        maps_to: initial_report
+      LAST_RPT_SW:
+        type: str
+        required: false
+        maps_to: last_report
+      TRNSMTL_NUM:
+        type: str
+        required: false
+        maps_to: transmittal_number
+      FI_NUM:
+        type: str
+        required: false
+        maps_to: fiscal_intermediary
+      ADR_VNDR_CD:
+        type: str
+        required: false
+        maps_to: vendor_code
+      FI_CREAT_DT:
+        type: str
+        required: false
+        maps_to: fi_create_date
+      UTIL_CD:
+        type: str
+        required: false
+        maps_to: utilization_code
+      NPR_DT:
+        type: str
+        required: false
+        maps_to: npr_date
+      SPEC_IND:
+        type: str
+        required: false
+        maps_to: special_indicator
+      FI_RCPT_DT:
+        type: str
+        required: false
+        maps_to: fi_receipt_date
+    row_count:
+      min: 3000
+      max: 10000
+      severity: WARN

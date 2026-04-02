@@ -11,22 +11,24 @@ from datetime import date
 from prefect import flow, task
 from prefect.tasks import task_input_hash
 
+from pipelines._common.config import compute_data_year
 
-@task(retries=2, retry_delay_seconds=300, cache_key_fn=task_input_hash)
+
+@task(retries=2, retry_delay_seconds=300, cache_key_fn=task_input_hash, tags=["db-write"])
 def run_partb(data_year: int, run_date: date) -> dict[str, int]:
     from pipelines.partb.pipeline import run
 
     return run(run_date=run_date, data_year=data_year)
 
 
-@task(retries=2, retry_delay_seconds=300, cache_key_fn=task_input_hash)
+@task(retries=2, retry_delay_seconds=300, cache_key_fn=task_input_hash, tags=["db-write"])
 def run_partd(data_year: int, run_date: date) -> dict[str, int]:
     from pipelines.partd.pipeline import run
 
     return run(run_date=run_date, data_year=data_year)
 
 
-@task(retries=2, retry_delay_seconds=300, cache_key_fn=task_input_hash)
+@task(retries=2, retry_delay_seconds=300, cache_key_fn=task_input_hash, tags=["db-write"])
 def run_geovar(data_year: int, run_date: date) -> dict[str, int]:
     from pipelines.geovar.pipeline import run
 
@@ -34,15 +36,14 @@ def run_geovar(data_year: int, run_date: date) -> dict[str, int]:
 
 
 @task(retries=1, retry_delay_seconds=60)
-def run_dbt() -> None:
-    """Run dbt for intermediate and mart models."""
-    import subprocess
+def run_dbt_transform() -> dict:
+    """Run dbt for intermediate and mart models with structured output."""
+    from pipelines._common.dbt_runner import run_dbt
 
-    subprocess.run(
-        ["dbt", "run", "--select", "tag:intermediate tag:mart"],
-        check=True,
-        cwd="models",
-    )
+    result = run_dbt(select="tag:intermediate tag:mart")
+    if not result["success"]:
+        raise RuntimeError(f"dbt run failed ({result['error_type']}): {result['error_message'][:500]}")
+    return result
 
 
 @task(retries=1)
@@ -67,7 +68,8 @@ def utilization_flow(
       3. Parquet export for DuckDB
     """
     run_date = run_date or date.today()
-    data_year = data_year or run_date.year - 2
+    # Part B has lag_months=24, representative of all utilization sources
+    data_year = data_year or compute_data_year("partb", run_date)
     all_results: dict[str, dict] = {}
 
     print(f"Starting utilization flow for data_year={data_year}")
@@ -84,8 +86,9 @@ def utilization_flow(
 
     # Phase 2: dbt transformation
     if not skip_dbt:
-        run_dbt()
-        print("dbt run complete")
+        dbt_result = run_dbt_transform()
+        all_results["dbt"] = dbt_result
+        print(f"dbt run complete: {dbt_result['models_passed']} models passed")
 
     # Phase 3: Parquet export
     if not skip_export:

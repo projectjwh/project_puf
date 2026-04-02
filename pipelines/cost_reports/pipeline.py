@@ -224,6 +224,16 @@ def run(
 
         # Read RPT file
         rpt_df = pd.read_csv(rpt_path, dtype=str, low_memory=False)
+
+        # Contract validation (on raw columns, before rename)
+        from pipelines._common.validate import validate_against_contract
+
+        contract_report = ValidationReport(source="cost_reports", run_id=run_id)
+        validate_against_contract(rpt_df, "cost_reports", data_year, contract_report)
+        contract_report.raise_if_blocked()
+        contract_report.persist()
+
+        # Rename columns
         rpt_df = rpt_df.rename(columns={k: v for k, v in RPT_COLUMN_MAPPING.items() if k in rpt_df.columns})
 
         # Validate

@@ -379,6 +379,14 @@ def run(source_path: Path | None = None, run_date: date | None = None) -> dict[s
         df = pd.read_csv(csv_path, usecols=cols_to_read, dtype=str, low_memory=False)
         log.info("csv_read", rows=len(df), columns=len(df.columns))
 
+        # Contract validation (on raw columns, before rename)
+        from pipelines._common.validate import validate_against_contract
+
+        contract_report = ValidationReport(source="nppes", run_id=run_id)
+        validate_against_contract(df, "nppes", 0, contract_report)
+        contract_report.raise_if_blocked()
+        contract_report.persist()
+
         # Rename columns
         df = df.rename(columns={k: v for k, v in COLUMN_MAPPING.items() if k in df.columns})
 

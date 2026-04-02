@@ -13,7 +13,7 @@ from pipelines._common.logging import get_logger, setup_logging
 log = get_logger(source="nppes_flow")
 
 
-@task(name="run-nppes-pipeline", retries=2, retry_delay_seconds=[300, 900])
+@task(name="run-nppes-pipeline", retries=2, retry_delay_seconds=[300, 900], tags=["db-write"])
 def run_nppes_pipeline(run_date: date) -> dict[str, int]:
     from pipelines.nppes.pipeline import run
 

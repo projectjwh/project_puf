@@ -1,0 +1,135 @@
+# Data Contract: National Plan & Provider Enumeration System (NPPES)
+# Source: CMS NPPES NPI Files
+# Publisher: CMS
+source: nppes
+version: "2024.1"
+grain: [npi]
+
+schemas:
+  default:
+    columns:
+      NPI:
+        type: str
+        required: true
+        format: "^\\d{10}$"
+        maps_to: npi
+      "Entity Type Code":
+        type: str
+        required: true
+        maps_to: entity_type_code
+      "Replacement NPI":
+        type: str
+        required: false
+        maps_to: replacement_npi
+      "Provider Organization Name (Legal Business Name)":
+        type: str
+        required: false
+        maps_to: provider_organization_name
+      "Provider Last Name (Legal Name)":
+        type: str
+        required: false
+        maps_to: provider_last_name
+      "Provider First Name":
+        type: str
+        required: false
+        maps_to: provider_first_name
+      "Provider Middle Name":
+        type: str
+        required: false
+        maps_to: provider_middle_name
+      "Provider Name Prefix Text":
+        type: str
+        required: false
+        maps_to: provider_name_prefix
+      "Provider Name Suffix Text":
+        type: str
+        required: false
+        maps_to: provider_name_suffix
+      "Provider Credential Text":
+        type: str
+        required: false
+        maps_to: provider_credential
+      "Provider Gender Code":
+        type: str
+        required: false
+        maps_to: provider_gender_code
+      "Provider First Line Business Practice Location Address":
+        type: str
+        required: false
+        maps_to: practice_address_line_1
+      "Provider Second Line Business Practice Location Address":
+        type: str
+        required: false
+        maps_to: practice_address_line_2
+      "Provider Business Practice Location Address City Name":
+        type: str
+        required: false
+        maps_to: practice_city
+      "Provider Business Practice Location Address State Name":
+        type: str
+        required: false
+        maps_to: practice_state
+      "Provider Business Practice Location Address Postal Code":
+        type: str
+        required: false
+        maps_to: practice_zip_full
+      "Provider Business Practice Location Address Country Code (If outside U.S.)":
+        type: str
+        required: false
+        maps_to: practice_country_code
+      "Provider Business Practice Location Address Telephone Number":
+        type: str
+        required: false
+        maps_to: practice_phone
+      "Provider Business Practice Location Address Fax Number":
+        type: str
+        required: false
+        maps_to: practice_fax
+      "Provider Enumeration Date":
+        type: str
+        required: false
+        maps_to: enumeration_date
+      "NPI Deactivation Date":
+        type: str
+        required: false
+        maps_to: deactivation_date
+      "NPI Reactivation Date":
+        type: str
+        required: false
+        maps_to: reactivation_date
+      "Healthcare Provider Taxonomy Code_1":
+        type: str
+        required: false
+        maps_to: taxonomy_code_1
+      "Healthcare Provider Primary Taxonomy Switch_1":
+        type: str
+        required: false
+        maps_to: taxonomy_primary_switch_1
+      "Provider License Number_1":
+        type: str
+        required: false
+        maps_to: license_number_1
+      "Provider License Number State Code_1":
+        type: str
+        required: false
+        maps_to: license_state_1
+      "Healthcare Provider Taxonomy Code_2":
+        type: str
+        required: false
+        maps_to: taxonomy_code_2
+      "Healthcare Provider Primary Taxonomy Switch_2":
+        type: str
+        required: false
+        maps_to: taxonomy_primary_switch_2
+      "Healthcare Provider Taxonomy Code_3":
+        type: str
+        required: false
+        maps_to: taxonomy_code_3
+      "Healthcare Provider Primary Taxonomy Switch_3":
+        type: str
+        required: false
+        maps_to: taxonomy_primary_switch_3
+    row_count:
+      min: 7000000
+      max: 10000000
+      severity: BLOCK

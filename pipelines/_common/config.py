@@ -4,6 +4,7 @@ Loads sources.yaml, database.yaml, and pipeline.yaml using Pydantic models.
 Supports environment variable overrides for deployment flexibility.
 """
 
+from datetime import date
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -188,3 +189,27 @@ def get_source(short_name: str) -> SourceDefinition:
     if short_name not in sources:
         raise KeyError(f"Source '{short_name}' not found in sources.yaml")
     return sources[short_name]
+
+
+def compute_data_year(source: str, run_date: date | None = None) -> int:
+    """Derive expected data_year from a source's ``lag_months`` config.
+
+    For sources with a publication lag (e.g. Part B has ``lag_months=24``),
+    the expected data year is the year obtained by subtracting the lag from
+    *run_date*.  Sources with ``lag_months=0`` (e.g. NPPES) return
+    ``run_date.year`` directly.
+
+    Args:
+        source: Source ``short_name`` as defined in ``sources.yaml``.
+        run_date: Reference date for the calculation.  Defaults to today.
+
+    Returns:
+        The integer data year (e.g. ``2024``).
+    """
+    from datetime import date as _date
+    from datetime import timedelta
+
+    run_date = run_date or _date.today()
+    source_def = get_source(source)
+    lag_date = run_date - timedelta(days=source_def.lag_months * 30)
+    return lag_date.year

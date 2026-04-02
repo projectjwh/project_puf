@@ -9,6 +9,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 import pandas as pd
+import yaml
 
 from pipelines._common.logging import get_logger
 
@@ -400,3 +401,105 @@ def check_row_count_delta(
             ),
         )
     )
+
+
+# ---------------------------------------------------------------------------
+# Data contract validation
+# ---------------------------------------------------------------------------
+
+
+def _load_contract(source: str) -> dict[str, Any]:
+    """Load contract YAML for a source. Returns empty dict if not found."""
+    from pipelines._common.config import CONFIG_DIR
+
+    contract_path = CONFIG_DIR / "contracts" / f"{source}.yaml"
+    if not contract_path.exists():
+        return {}
+    with open(contract_path) as f:
+        return yaml.safe_load(f) or {}
+
+
+def validate_against_contract(
+    df: pd.DataFrame,
+    source: str,
+    data_year: int,
+    report: ValidationReport,
+) -> None:
+    """Validate DataFrame schema against source's data contract.
+
+    Loads config/contracts/{source}.yaml.
+    Checks:
+    - All required columns present (BLOCK)
+    - No unexpected columns that aren't in contract (WARN)
+    - Column types match expectations
+    - Row count within contract bounds
+
+    Operates on the RAW DataFrame (before column renaming), since
+    contracts define source column names.
+    """
+    contract = _load_contract(source)
+    if not contract:
+        log.warning("contract_not_found", source=source)
+        return
+
+    schemas = contract.get("schemas", {})
+    default_schema = schemas.get("default", {})
+    columns_spec: dict[str, dict[str, Any]] = default_schema.get("columns", {})
+
+    if not columns_spec:
+        log.warning("contract_no_columns", source=source)
+        return
+
+    # 1. Check required columns are present (BLOCK)
+    required_cols = [col for col, spec in columns_spec.items() if spec.get("required", False)]
+    missing_required = [col for col in required_cols if col not in df.columns]
+    report.add(
+        ValidationResult(
+            rule_name="contract_required_columns",
+            severity="BLOCK",
+            passed=len(missing_required) == 0,
+            metric_value=str(sorted(missing_required)) if missing_required else "all_present",
+            threshold=str(sorted(required_cols)),
+            message=f"Contract required columns missing: {sorted(missing_required)}" if missing_required else "",
+        )
+    )
+
+    # 2. Check for unexpected columns not in contract (WARN)
+    contract_col_names = set(columns_spec.keys())
+    actual_col_names = set(df.columns)
+    unexpected = sorted(actual_col_names - contract_col_names)
+    report.add(
+        ValidationResult(
+            rule_name="contract_unexpected_columns",
+            severity="WARN",
+            passed=len(unexpected) == 0,
+            metric_value=str(unexpected[:10]) if unexpected else "none",
+            threshold="all columns in contract",
+            message=f"{len(unexpected)} unexpected columns not in contract: {unexpected[:10]}" if unexpected else "",
+        )
+    )
+
+    # 3. Check column types (WARN for mismatches)
+    for col_name, spec in columns_spec.items():
+        if col_name not in df.columns:
+            continue
+        expected_type = spec.get("type", "")
+        if expected_type == "str" and df[col_name].dtype not in ("object", "string"):
+            report.add(
+                ValidationResult(
+                    rule_name=f"contract_type_{col_name}",
+                    severity="WARN",
+                    passed=False,
+                    metric_value=str(df[col_name].dtype),
+                    threshold=f"type={expected_type}",
+                    message=f"Column {col_name} expected type str, got {df[col_name].dtype}",
+                )
+            )
+
+    # 4. Row count within contract bounds
+    row_count_spec = default_schema.get("row_count", {})
+    if row_count_spec:
+        min_rows = row_count_spec.get("min", 0)
+        max_rows = row_count_spec.get("max", 1_000_000_000)
+        severity = row_count_spec.get("severity", "WARN")
+        check_row_count(df, min_rows, max_rows, report, severity=severity)
