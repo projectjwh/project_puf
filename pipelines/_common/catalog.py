@@ -384,3 +384,50 @@ def update_data_freshness(
             )
     except Exception as e:
         log.warning("update_data_freshness_failed", source=source, error=str(e))
+
+
+# ---------------------------------------------------------------------------
+# Circuit breaker
+# ---------------------------------------------------------------------------
+
+
+def check_circuit_breaker(source: str, max_consecutive_failures: int = 5) -> bool:
+    """Check if a source has failed too many consecutive times.
+
+    Queries catalog.pipeline_runs for the most recent runs of this source.
+    Returns True if circuit is OPEN (should skip), False if OK to run.
+    """
+    source_id = _resolve_source_id(source)
+    if source_id is None:
+        return False  # Can't check — allow run
+
+    engine = get_pg_engine(use_pgbouncer=False)
+    try:
+        with engine.connect() as conn:
+            result = conn.execute(
+                text("""
+                    SELECT status FROM catalog.pipeline_runs
+                    WHERE source_id = :source_id
+                    ORDER BY started_at DESC
+                    LIMIT :limit
+                """),
+                {"source_id": source_id, "limit": max_consecutive_failures},
+            )
+            rows = result.fetchall()
+
+        if len(rows) < max_consecutive_failures:
+            return False  # Not enough history
+
+        all_failed = all(row[0] == "failed" for row in rows)
+        if all_failed:
+            log.warning(
+                "circuit_breaker_open",
+                source=source,
+                consecutive_failures=max_consecutive_failures,
+                message=f"Skipping {source}: {max_consecutive_failures} consecutive failures",
+            )
+        return all_failed
+
+    except Exception as e:
+        log.warning("circuit_breaker_check_failed", source=source, error=str(e))
+        return False  # Fail open — allow run

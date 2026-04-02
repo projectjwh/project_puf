@@ -37,3 +37,40 @@ jobs:
           python-version: "3.12"
       - run: pip install -e ".[dev]"
       - run: pytest -m "not integration" -v --tb=short
+
+  integration:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: puf_test
+          POSTGRES_USER: puf_admin
+          POSTGRES_PASSWORD: puf_test_password
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e ".[dev]"
+      - name: Run migrations on test DB
+        env:
+          PUF_DB_HOST: localhost
+          PUF_DB_PORT: "5433"
+          PUF_DB_PASSWORD: puf_test_password
+          PUF_DB_NAME: puf_test
+        run: alembic -c pipelines/alembic/alembic.ini upgrade head
+      - name: Run integration tests
+        env:
+          PUF_DB_HOST: localhost
+          PUF_DB_PORT: "5433"
+          PUF_DB_PASSWORD: puf_test_password
+          PUF_DB_NAME: puf_test
+        run: pytest -m integration -v --tb=short

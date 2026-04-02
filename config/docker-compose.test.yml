@@ -1,0 +1,15 @@
+services:
+  postgres-test:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: puf_test
+      POSTGRES_USER: puf_admin
+      POSTGRES_PASSWORD: puf_test_password
+    ports:
+      - "5433:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U puf_admin -d puf_test"]
+      interval: 2s
+      retries: 10
