@@ -79,6 +79,7 @@ class ValidationReport:
         if self.run_id is None or self.run_id < 0:
             return
         from pipelines._common.catalog import persist_validation_report
+
         persist_validation_report(self, self.run_id)
 
     def raise_if_blocked(self) -> None:
@@ -96,6 +97,7 @@ class ValidationReport:
 # ---------------------------------------------------------------------------
 # Quarantine application
 # ---------------------------------------------------------------------------
+
 
 def apply_quarantine(
     df: pd.DataFrame,
@@ -135,7 +137,11 @@ def apply_quarantine(
         aligned_mask = mask.reindex(clean_df.index, fill_value=False)
         if aligned_mask.any():
             clean_df = write_quarantine_rows(
-                clean_df, aligned_mask, rule_name, run_id, report.source,
+                clean_df,
+                aligned_mask,
+                rule_name,
+                run_id,
+                report.source,
             )
 
     return clean_df
@@ -145,32 +151,37 @@ def apply_quarantine(
 # Validation checks
 # ---------------------------------------------------------------------------
 
+
 def check_required_columns(df: pd.DataFrame, expected: list[str], report: ValidationReport) -> None:
     """Verify all expected columns are present. Severity: BLOCK."""
     missing = set(expected) - set(df.columns)
-    report.add(ValidationResult(
-        rule_name="required_columns",
-        severity="BLOCK",
-        passed=len(missing) == 0,
-        metric_value=str(sorted(missing)) if missing else "all_present",
-        threshold=str(expected),
-        message=f"Missing columns: {sorted(missing)}" if missing else "",
-    ))
+    report.add(
+        ValidationResult(
+            rule_name="required_columns",
+            severity="BLOCK",
+            passed=len(missing) == 0,
+            metric_value=str(sorted(missing)) if missing else "all_present",
+            threshold=str(expected),
+            message=f"Missing columns: {sorted(missing)}" if missing else "",
+        )
+    )
 
 
 def check_column_not_null(df: pd.DataFrame, column: str, report: ValidationReport, severity: str = "BLOCK") -> None:
     """Verify a column has zero null values."""
     null_mask = df[column].isna()
     null_count = int(null_mask.sum())
-    report.add(ValidationResult(
-        rule_name=f"{column}_not_null",
-        severity=severity,
-        passed=null_count == 0,
-        metric_value=str(null_count),
-        threshold="0",
-        message=f"{null_count:,} null values in {column}" if null_count > 0 else "",
-        rows_affected=null_count,
-    ))
+    report.add(
+        ValidationResult(
+            rule_name=f"{column}_not_null",
+            severity=severity,
+            passed=null_count == 0,
+            metric_value=str(null_count),
+            threshold="0",
+            message=f"{null_count:,} null values in {column}" if null_count > 0 else "",
+            rows_affected=null_count,
+        )
+    )
     if null_count > 0:
         report.add_quarantine_mask(f"{column}_not_null", null_mask)
 
@@ -189,15 +200,17 @@ def check_column_format(
     regex = re.compile(pattern)
     invalid_mask_partial = ~non_null.str.match(regex)
     invalid = non_null[invalid_mask_partial]
-    report.add(ValidationResult(
-        rule_name=f"{column}_format",
-        severity=severity,
-        passed=len(invalid) == 0,
-        metric_value=str(len(invalid)),
-        threshold=f"pattern={pattern}",
-        message=f"{len(invalid):,} rows don't match {pattern}" if len(invalid) > 0 else "",
-        rows_affected=len(invalid),
-    ))
+    report.add(
+        ValidationResult(
+            rule_name=f"{column}_format",
+            severity=severity,
+            passed=len(invalid) == 0,
+            metric_value=str(len(invalid)),
+            threshold=f"pattern={pattern}",
+            message=f"{len(invalid):,} rows don't match {pattern}" if len(invalid) > 0 else "",
+            rows_affected=len(invalid),
+        )
+    )
     if len(invalid) > 0:
         # Build full-index mask (False for null rows, True for format failures)
         full_mask = pd.Series(False, index=df.index)
@@ -208,15 +221,17 @@ def check_column_format(
 def check_uniqueness(df: pd.DataFrame, columns: list[str], report: ValidationReport, severity: str = "BLOCK") -> None:
     """Verify no duplicate rows for the given key columns."""
     dupes = df.duplicated(subset=columns, keep=False).sum()
-    report.add(ValidationResult(
-        rule_name=f"{'_'.join(columns)}_unique",
-        severity=severity,
-        passed=int(dupes) == 0,
-        metric_value=str(int(dupes)),
-        threshold="0",
-        message=f"{int(dupes):,} duplicate rows on {columns}" if dupes > 0 else "",
-        rows_affected=int(dupes),
-    ))
+    report.add(
+        ValidationResult(
+            rule_name=f"{'_'.join(columns)}_unique",
+            severity=severity,
+            passed=int(dupes) == 0,
+            metric_value=str(int(dupes)),
+            threshold="0",
+            message=f"{int(dupes):,} duplicate rows on {columns}" if dupes > 0 else "",
+            rows_affected=int(dupes),
+        )
+    )
 
 
 def check_row_count(
@@ -229,15 +244,17 @@ def check_row_count(
     """Verify row count is within expected range."""
     count = len(df)
     in_range = min_rows <= count <= max_rows
-    report.add(ValidationResult(
-        rule_name="row_count_range",
-        severity=severity,
-        passed=in_range,
-        metric_value=str(count),
-        threshold=f"[{min_rows:,}, {max_rows:,}]",
-        message=f"Row count {count:,} outside expected range [{min_rows:,}, {max_rows:,}]" if not in_range else "",
-        rows_affected=0 if in_range else count,
-    ))
+    report.add(
+        ValidationResult(
+            rule_name="row_count_range",
+            severity=severity,
+            passed=in_range,
+            metric_value=str(count),
+            threshold=f"[{min_rows:,}, {max_rows:,}]",
+            message=f"Row count {count:,} outside expected range [{min_rows:,}, {max_rows:,}]" if not in_range else "",
+            rows_affected=0 if in_range else count,
+        )
+    )
 
 
 def check_value_set(
@@ -252,15 +269,17 @@ def check_value_set(
     invalid_mask_partial = ~non_null.isin(allowed_values)
     invalid = non_null[invalid_mask_partial]
     unique_invalid = set(invalid.unique())
-    report.add(ValidationResult(
-        rule_name=f"{column}_value_set",
-        severity=severity,
-        passed=len(invalid) == 0,
-        metric_value=str(sorted(unique_invalid)[:10]) if unique_invalid else "all_valid",
-        threshold=str(sorted(allowed_values)),
-        message=f"{len(invalid):,} rows with invalid values: {sorted(unique_invalid)[:5]}" if invalid.any() else "",
-        rows_affected=len(invalid),
-    ))
+    report.add(
+        ValidationResult(
+            rule_name=f"{column}_value_set",
+            severity=severity,
+            passed=len(invalid) == 0,
+            metric_value=str(sorted(unique_invalid)[:10]) if unique_invalid else "all_valid",
+            threshold=str(sorted(allowed_values)),
+            message=f"{len(invalid):,} rows with invalid values: {sorted(unique_invalid)[:5]}" if invalid.any() else "",
+            rows_affected=len(invalid),
+        )
+    )
     if len(invalid) > 0:
         full_mask = pd.Series(False, index=df.index)
         full_mask.loc[invalid.index] = True
@@ -277,15 +296,17 @@ def check_null_rate(
     """Verify null rate for a column doesn't exceed threshold."""
     null_count = int(df[column].isna().sum())
     rate = null_count / len(df) if len(df) > 0 else 0
-    report.add(ValidationResult(
-        rule_name=f"{column}_null_rate",
-        severity=severity,
-        passed=rate <= max_rate,
-        metric_value=f"{rate:.4f}",
-        threshold=f"<={max_rate:.4f}",
-        message=f"{column} null rate {rate:.2%} exceeds {max_rate:.2%}" if rate > max_rate else "",
-        rows_affected=null_count,
-    ))
+    report.add(
+        ValidationResult(
+            rule_name=f"{column}_null_rate",
+            severity=severity,
+            passed=rate <= max_rate,
+            metric_value=f"{rate:.4f}",
+            threshold=f"<={max_rate:.4f}",
+            message=f"{column} null rate {rate:.2%} exceeds {max_rate:.2%}" if rate > max_rate else "",
+            rows_affected=null_count,
+        )
+    )
 
 
 def check_value_range(
@@ -305,15 +326,17 @@ def check_value_range(
         violations += int((non_null < min_val).sum())
     if max_val is not None:
         violations += int((non_null > max_val).sum())
-    report.add(ValidationResult(
-        rule_name=f"{column}_value_range",
-        severity=severity,
-        passed=violations == 0,
-        metric_value=str(violations),
-        threshold=f"[{min_val}, {max_val}]",
-        message=f"{violations:,} values outside [{min_val}, {max_val}] in {column}" if violations > 0 else "",
-        rows_affected=violations,
-    ))
+    report.add(
+        ValidationResult(
+            rule_name=f"{column}_value_range",
+            severity=severity,
+            passed=violations == 0,
+            metric_value=str(violations),
+            threshold=f"[{min_val}, {max_val}]",
+            message=f"{violations:,} values outside [{min_val}, {max_val}] in {column}" if violations > 0 else "",
+            rows_affected=violations,
+        )
+    )
 
 
 def check_referential_integrity(
@@ -332,15 +355,19 @@ def check_referential_integrity(
     matched = match_mask.sum()
     match_rate = int(matched) / len(non_null) if len(non_null) > 0 else 1.0
     unmatched = len(non_null) - int(matched)
-    report.add(ValidationResult(
-        rule_name=f"{column}_referential_integrity",
-        severity=severity,
-        passed=match_rate >= min_match_rate,
-        metric_value=f"{match_rate:.4f}",
-        threshold=f">={min_match_rate:.4f}",
-        message=f"{unmatched:,} unmatched {column} values ({match_rate:.2%} match rate)" if match_rate < min_match_rate else "",
-        rows_affected=unmatched,
-    ))
+    report.add(
+        ValidationResult(
+            rule_name=f"{column}_referential_integrity",
+            severity=severity,
+            passed=match_rate >= min_match_rate,
+            metric_value=f"{match_rate:.4f}",
+            threshold=f">={min_match_rate:.4f}",
+            message=f"{unmatched:,} unmatched {column} values ({match_rate:.2%} match rate)"
+            if match_rate < min_match_rate
+            else "",
+            rows_affected=unmatched,
+        )
+    )
     if match_rate < min_match_rate:
         full_mask = pd.Series(False, index=df.index)
         unmatched_idx = non_null[~match_mask].index
@@ -359,14 +386,17 @@ def check_row_count_delta(
     if previous_count == 0:
         return  # No baseline to compare
     pct_change = abs(current_count - previous_count) / previous_count
-    report.add(ValidationResult(
-        rule_name="row_count_delta",
-        severity=severity,
-        passed=pct_change <= max_pct_change,
-        metric_value=f"{pct_change:.4f}",
-        threshold=f"<={max_pct_change:.4f}",
-        message=(
-            f"Row count changed by {pct_change:.2%} ({previous_count:,} → {current_count:,})"
-            if pct_change > max_pct_change else ""
-        ),
-    ))
+    report.add(
+        ValidationResult(
+            rule_name="row_count_delta",
+            severity=severity,
+            passed=pct_change <= max_pct_change,
+            metric_value=f"{pct_change:.4f}",
+            threshold=f"<={max_pct_change:.4f}",
+            message=(
+                f"Row count changed by {pct_change:.2%} ({previous_count:,} → {current_count:,})"
+                if pct_change > max_pct_change
+                else ""
+            ),
+        )
+    )

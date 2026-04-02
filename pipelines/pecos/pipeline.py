@@ -55,9 +55,16 @@ COLUMN_MAPPING = {
 }
 
 OUTPUT_COLUMNS = [
-    "npi", "pac_id", "enrollment_id", "enrollment_type",
-    "enrollment_state", "provider_type", "specialty",
-    "organization_name", "accepts_assignment", "participating",
+    "npi",
+    "pac_id",
+    "enrollment_id",
+    "enrollment_type",
+    "enrollment_state",
+    "provider_type",
+    "specialty",
+    "organization_name",
+    "accepts_assignment",
+    "participating",
     "enrollment_date",
 ]
 

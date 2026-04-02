@@ -39,8 +39,14 @@ COLUMN_MAPPING = {
 }
 
 OUTPUT_COLUMNS = [
-    "county_fips", "year", "state_fips", "county_name",
-    "ffs_per_capita", "ma_benchmark", "risk_score", "quality_bonus_pct",
+    "county_fips",
+    "year",
+    "state_fips",
+    "county_name",
+    "ffs_per_capita",
+    "ma_benchmark",
+    "risk_score",
+    "quality_bonus_pct",
 ]
 
 

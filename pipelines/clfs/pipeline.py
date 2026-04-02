@@ -37,8 +37,12 @@ COLUMN_MAPPING = {
 }
 
 OUTPUT_COLUMNS = [
-    "hcpcs_code", "effective_year", "short_description",
-    "national_limit_amount", "floor_amount", "personal_use_crosswalk",
+    "hcpcs_code",
+    "effective_year",
+    "short_description",
+    "national_limit_amount",
+    "floor_amount",
+    "personal_use_crosswalk",
 ]
 
 

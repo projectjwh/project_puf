@@ -14,7 +14,6 @@ from pathlib import Path
 import pandas as pd
 
 from pipelines._common.acquire import (
-    acquire_source,
     compute_hash,
     download_file,
     extract_zip,
@@ -25,10 +24,8 @@ from pipelines._common.config import PROJECT_ROOT, get_pipeline_settings, get_so
 from pipelines._common.db import copy_dataframe_to_pg, write_parquet
 from pipelines._common.logging import get_logger
 from pipelines._common.transform import (
-    add_snapshot_metadata,
     clean_string_columns,
     extract_zip5,
-    normalize_fips_state,
     normalize_npi,
 )
 from pipelines._common.validate import (
@@ -45,17 +42,61 @@ log = get_logger(source="nppes")
 
 # State abbreviation → FIPS mapping (used for state_fips derivation)
 STATE_ABBREV_TO_FIPS = {
-    "AL": "01", "AK": "02", "AZ": "04", "AR": "05", "CA": "06",
-    "CO": "08", "CT": "09", "DE": "10", "DC": "11", "FL": "12",
-    "GA": "13", "HI": "15", "ID": "16", "IL": "17", "IN": "18",
-    "IA": "19", "KS": "20", "KY": "21", "LA": "22", "ME": "23",
-    "MD": "24", "MA": "25", "MI": "26", "MN": "27", "MS": "28",
-    "MO": "29", "MT": "30", "NE": "31", "NV": "32", "NH": "33",
-    "NJ": "34", "NM": "35", "NY": "36", "NC": "37", "ND": "38",
-    "OH": "39", "OK": "40", "OR": "41", "PA": "42", "PR": "72",
-    "RI": "44", "SC": "45", "SD": "46", "TN": "47", "TX": "48",
-    "UT": "49", "VT": "50", "VA": "51", "VI": "78", "WA": "53",
-    "WV": "54", "WI": "55", "WY": "56", "GU": "66", "AS": "60",
+    "AL": "01",
+    "AK": "02",
+    "AZ": "04",
+    "AR": "05",
+    "CA": "06",
+    "CO": "08",
+    "CT": "09",
+    "DE": "10",
+    "DC": "11",
+    "FL": "12",
+    "GA": "13",
+    "HI": "15",
+    "ID": "16",
+    "IL": "17",
+    "IN": "18",
+    "IA": "19",
+    "KS": "20",
+    "KY": "21",
+    "LA": "22",
+    "ME": "23",
+    "MD": "24",
+    "MA": "25",
+    "MI": "26",
+    "MN": "27",
+    "MS": "28",
+    "MO": "29",
+    "MT": "30",
+    "NE": "31",
+    "NV": "32",
+    "NH": "33",
+    "NJ": "34",
+    "NM": "35",
+    "NY": "36",
+    "NC": "37",
+    "ND": "38",
+    "OH": "39",
+    "OK": "40",
+    "OR": "41",
+    "PA": "42",
+    "PR": "72",
+    "RI": "44",
+    "SC": "45",
+    "SD": "46",
+    "TN": "47",
+    "TX": "48",
+    "UT": "49",
+    "VT": "50",
+    "VA": "51",
+    "VI": "78",
+    "WA": "53",
+    "WV": "54",
+    "WI": "55",
+    "WY": "56",
+    "GU": "66",
+    "AS": "60",
     "MP": "69",
 }
 
@@ -155,8 +196,13 @@ def transform_nppes(df: pd.DataFrame, run_date: date) -> pd.DataFrame:
     df["npi"] = normalize_npi(df["npi"])
 
     # Clean string columns
-    name_cols = ["provider_last_name", "provider_first_name", "provider_middle_name",
-                 "provider_organization_name", "provider_credential"]
+    name_cols = [
+        "provider_last_name",
+        "provider_first_name",
+        "provider_middle_name",
+        "provider_organization_name",
+        "provider_credential",
+    ]
     clean_string_columns(df, [c for c in name_cols if c in df.columns])
 
     # Extract ZIP5
@@ -176,8 +222,7 @@ def transform_nppes(df: pd.DataFrame, run_date: date) -> pd.DataFrame:
     df["display_name"] = ""
     indiv = df["entity_type_code"] == "1"
     df.loc[indiv, "display_name"] = (
-        df.loc[indiv, "provider_last_name"].fillna("") + ", " +
-        df.loc[indiv, "provider_first_name"].fillna("")
+        df.loc[indiv, "provider_last_name"].fillna("") + ", " + df.loc[indiv, "provider_first_name"].fillna("")
     )
     cred_mask = indiv & df["provider_credential"].notna() & (df["provider_credential"] != "")
     df.loc[cred_mask, "display_name"] = (
@@ -214,9 +259,7 @@ def transform_nppes(df: pd.DataFrame, run_date: date) -> pd.DataFrame:
 
     # Years since enumeration
     today = pd.Timestamp(run_date)
-    df["years_since_enumeration"] = (
-        (today - df["enumeration_date"]).dt.days / 365.25
-    ).round(1)
+    df["years_since_enumeration"] = ((today - df["enumeration_date"]).dt.days / 365.25).round(1)
 
     # Snapshot date
     df["_snapshot_date"] = run_date
@@ -256,16 +299,35 @@ def build_taxonomy_table(df: pd.DataFrame) -> pd.DataFrame:
 
 # Provider columns for ref_providers table
 REF_PROVIDER_COLUMNS = [
-    "npi", "entity_type_code", "entity_type", "display_name",
-    "provider_last_name", "provider_first_name", "provider_middle_name",
-    "provider_credential", "provider_organization_name", "provider_gender_code",
-    "practice_address_line_1", "practice_address_line_2", "practice_city",
-    "practice_state", "practice_zip5", "practice_zip_full",
-    "practice_phone", "practice_fax", "state_fips",
-    "primary_taxonomy_code", "taxonomy_count",
-    "enumeration_date", "deactivation_date", "reactivation_date",
-    "is_active", "is_individual", "is_organization",
-    "years_since_enumeration", "_snapshot_date",
+    "npi",
+    "entity_type_code",
+    "entity_type",
+    "display_name",
+    "provider_last_name",
+    "provider_first_name",
+    "provider_middle_name",
+    "provider_credential",
+    "provider_organization_name",
+    "provider_gender_code",
+    "practice_address_line_1",
+    "practice_address_line_2",
+    "practice_city",
+    "practice_state",
+    "practice_zip5",
+    "practice_zip_full",
+    "practice_phone",
+    "practice_fax",
+    "state_fips",
+    "primary_taxonomy_code",
+    "taxonomy_count",
+    "enumeration_date",
+    "deactivation_date",
+    "reactivation_date",
+    "is_active",
+    "is_individual",
+    "is_organization",
+    "years_since_enumeration",
+    "_snapshot_date",
 ]
 
 
@@ -364,8 +426,12 @@ def run(source_path: Path | None = None, run_date: date | None = None) -> dict[s
         duration = time.time() - start_time
         total_loaded = results.get("ref_providers", 0)
         complete_pipeline_run(
-            run_id, "success", rows_processed=len(df),
-            rows_loaded=total_loaded, file_hash=file_hash, duration_seconds=duration,
+            run_id,
+            "success",
+            rows_processed=len(df),
+            rows_loaded=total_loaded,
+            file_hash=file_hash,
+            duration_seconds=duration,
         )
         update_data_freshness("nppes", file_hash=file_hash)
 
@@ -374,7 +440,6 @@ def run(source_path: Path | None = None, run_date: date | None = None) -> dict[s
 
     except Exception as e:
         duration = time.time() - start_time
-        complete_pipeline_run(run_id, "failed", error_message=str(e),
-                              duration_seconds=duration)
+        complete_pipeline_run(run_id, "failed", error_message=str(e), duration_seconds=duration)
         record_pipeline_failure(run_id, e)
         raise

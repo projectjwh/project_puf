@@ -44,10 +44,17 @@ COLUMN_MAPPING = {
 }
 
 STAGING_COLUMNS = [
-    "referring_npi", "supplier_npi", "supplier_name", "supplier_state",
-    "hcpcs_code", "hcpcs_description",
-    "number_of_services", "number_of_beneficiaries",
-    "avg_submitted_charge", "avg_medicare_allowed", "avg_medicare_payment",
+    "referring_npi",
+    "supplier_npi",
+    "supplier_name",
+    "supplier_state",
+    "hcpcs_code",
+    "hcpcs_description",
+    "number_of_services",
+    "number_of_beneficiaries",
+    "avg_submitted_charge",
+    "avg_medicare_allowed",
+    "avg_medicare_payment",
     "data_year",
 ]
 
@@ -114,9 +121,7 @@ def run(
     report.raise_if_blocked()
     df = transform_dme(df, data_year)
 
-    parquet_path = (
-        PROJECT_ROOT / settings.storage.processed_base / "dme" / str(data_year) / "dme.parquet"
-    )
+    parquet_path = PROJECT_ROOT / settings.storage.processed_base / "dme" / str(data_year) / "dme.parquet"
     write_parquet(df, parquet_path)
     results["dme_parquet"] = len(df)
 

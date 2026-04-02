@@ -12,10 +12,10 @@ import yaml
 from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings
 
-
 # ---------------------------------------------------------------------------
 # Path resolution
 # ---------------------------------------------------------------------------
+
 
 def _project_root() -> Path:
     """Walk up from this file to find the project root (contains pyproject.toml)."""
@@ -33,6 +33,7 @@ CONFIG_DIR = PROJECT_ROOT / "config"
 # ---------------------------------------------------------------------------
 # Database settings
 # ---------------------------------------------------------------------------
+
 
 class DatabaseSettings(BaseSettings):
     """PostgreSQL connection settings. Environment variables override defaults."""
@@ -60,6 +61,7 @@ class DatabaseSettings(BaseSettings):
 # ---------------------------------------------------------------------------
 # Pipeline settings
 # ---------------------------------------------------------------------------
+
 
 class RetryConfig(BaseModel):
     max_attempts: int = 3
@@ -98,6 +100,7 @@ class PipelineSettings(BaseModel):
 # Source definition
 # ---------------------------------------------------------------------------
 
+
 class FileSize(BaseModel):
     min_gb: float = 0.0
     max_gb: float = 100.0
@@ -130,6 +133,7 @@ class SourceDefinition(BaseModel):
 # ---------------------------------------------------------------------------
 # Loading functions
 # ---------------------------------------------------------------------------
+
 
 def _load_yaml(path: Path) -> dict[str, Any]:
     """Load a YAML file and return its contents."""
@@ -171,7 +175,7 @@ def get_sources() -> dict[str, SourceDefinition]:
     for category_data in raw.values():
         if not isinstance(category_data, dict):
             continue
-        for source_key, source_data in category_data.items():
+        for _source_key, source_data in category_data.items():
             if isinstance(source_data, dict) and "short_name" in source_data:
                 defn = SourceDefinition(**source_data)
                 sources[defn.short_name] = defn

@@ -6,15 +6,16 @@ Revision ID: 005
 Revises: 004
 Create Date: 2026-03-04
 """
-from typing import Sequence, Union
+
+from collections.abc import Sequence
 
 import sqlalchemy as sa
 from alembic import op
 
 revision: str = "005"
-down_revision: Union[str, None] = "004"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = "004"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
@@ -31,8 +32,11 @@ def upgrade() -> None:
         schema="reference",
     )
     op.create_index(
-        "ix_ref_state_fips_abbrev", "ref_state_fips", ["state_abbreviation"],
-        unique=True, schema="reference",
+        "ix_ref_state_fips_abbrev",
+        "ref_state_fips",
+        ["state_abbreviation"],
+        unique=True,
+        schema="reference",
     )
 
     # ref_county_fips — ~3,250 rows
@@ -47,7 +51,10 @@ def upgrade() -> None:
         schema="reference",
     )
     op.create_index(
-        "ix_ref_county_fips_state", "ref_county_fips", ["state_fips"], schema="reference",
+        "ix_ref_county_fips_state",
+        "ref_county_fips",
+        ["state_fips"],
+        schema="reference",
     )
 
     # ref_zip_county_crosswalk — ~50,000 rows
@@ -66,14 +73,22 @@ def upgrade() -> None:
         schema="reference",
     )
     op.create_primary_key(
-        "pk_ref_zip_county", "ref_zip_county_crosswalk",
-        ["zip_code", "county_fips"], schema="reference",
+        "pk_ref_zip_county",
+        "ref_zip_county_crosswalk",
+        ["zip_code", "county_fips"],
+        schema="reference",
     )
     op.create_index(
-        "ix_ref_zip_county_zip", "ref_zip_county_crosswalk", ["zip_code"], schema="reference",
+        "ix_ref_zip_county_zip",
+        "ref_zip_county_crosswalk",
+        ["zip_code"],
+        schema="reference",
     )
     op.create_index(
-        "ix_ref_zip_county_county", "ref_zip_county_crosswalk", ["county_fips"], schema="reference",
+        "ix_ref_zip_county_county",
+        "ref_zip_county_crosswalk",
+        ["county_fips"],
+        schema="reference",
     )
 
     # ref_cbsa — ~2,000 rows (Metropolitan/Micropolitan Statistical Areas)
@@ -106,7 +121,10 @@ def upgrade() -> None:
         schema="reference",
     )
     op.create_index(
-        "ix_ref_ruca_code", "ref_ruca", ["ruca_code"], schema="reference",
+        "ix_ref_ruca_code",
+        "ref_ruca",
+        ["ruca_code"],
+        schema="reference",
     )
 
 

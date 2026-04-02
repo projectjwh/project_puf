@@ -17,9 +17,8 @@ Adds staging/reference tables for all 26 Tier 2 data sources:
 - MA: enrollment, benchmarks
 """
 
-from alembic import op
 import sqlalchemy as sa
-
+from alembic import op
 
 revision = "010"
 down_revision = "009"
@@ -532,7 +531,9 @@ def upgrade() -> None:
             PARTITION OF staging.stg_cms__ma_enrollment
             FOR VALUES FROM ({year}) TO ({year + 1})
         """)
-    op.create_index("idx_stg_ma_enroll_county", "stg_cms__ma_enrollment", ["county_fips", "data_year"], schema="staging")
+    op.create_index(
+        "idx_stg_ma_enroll_county", "stg_cms__ma_enrollment", ["county_fips", "data_year"], schema="staging"
+    )
 
     # Cost reports — SNF, HHA, Hospice (same HCRIS structure as hospital)
     for facility_type in ("snf", "hha", "hospice"):
@@ -568,22 +569,39 @@ def upgrade() -> None:
 def downgrade() -> None:
     # Staging tables
     for table in (
-        "stg_cms__ma_enrollment", "stg_cms__dme", "stg_cms__charges",
-        "stg_cms__readmissions", "stg_cms__dialysis", "stg_cms__cahps",
-        "stg_cms__pbj_staffing", "stg_cms__five_star", "stg_cms__sdud",
-        "stg_cms__hospice_utilization", "stg_cms__hha_utilization",
-        "stg_cms__snf_utilization", "stg_cms__inpatient",
-        "stg_cms__cost_reports_snf", "stg_cms__cost_reports_hha",
+        "stg_cms__ma_enrollment",
+        "stg_cms__dme",
+        "stg_cms__charges",
+        "stg_cms__readmissions",
+        "stg_cms__dialysis",
+        "stg_cms__cahps",
+        "stg_cms__pbj_staffing",
+        "stg_cms__five_star",
+        "stg_cms__sdud",
+        "stg_cms__hospice_utilization",
+        "stg_cms__hha_utilization",
+        "stg_cms__snf_utilization",
+        "stg_cms__inpatient",
+        "stg_cms__cost_reports_snf",
+        "stg_cms__cost_reports_hha",
         "stg_cms__cost_reports_hospice",
     ):
         op.execute(f"DROP TABLE IF EXISTS staging.{table} CASCADE")
 
     # Reference tables
     for table in (
-        "ref_ma_benchmarks", "ref_asp_pricing", "ref_snf_pps",
-        "ref_dmepos_fees", "ref_clfs", "ref_ndc_rxcui", "ref_rxnorm",
-        "ref_hospital_general", "ref_ordering_referring",
-        "ref_pecos_enrollment", "ref_census_population",
-        "ref_hrr_hsa", "ref_apc",
+        "ref_ma_benchmarks",
+        "ref_asp_pricing",
+        "ref_snf_pps",
+        "ref_dmepos_fees",
+        "ref_clfs",
+        "ref_ndc_rxcui",
+        "ref_rxnorm",
+        "ref_hospital_general",
+        "ref_ordering_referring",
+        "ref_pecos_enrollment",
+        "ref_census_population",
+        "ref_hrr_hsa",
+        "ref_apc",
     ):
         op.execute(f"DROP TABLE IF EXISTS reference.{table} CASCADE")

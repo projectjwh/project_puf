@@ -15,7 +15,7 @@ from pipelines._common.acquire import download_file, resolve_landing_path
 from pipelines._common.config import PROJECT_ROOT, get_pipeline_settings, get_source
 from pipelines._common.db import copy_dataframe_to_pg, write_parquet
 from pipelines._common.logging import get_logger
-from pipelines._common.transform import add_data_year, normalize_fips_county, normalize_fips_state
+from pipelines._common.transform import add_data_year, normalize_fips_county
 from pipelines._common.validate import (
     ValidationReport,
     check_column_not_null,
@@ -39,9 +39,16 @@ COLUMN_MAPPING = {
 }
 
 STAGING_COLUMNS = [
-    "contract_id", "plan_id", "county_fips", "state_fips", "state",
-    "year_month", "enrollment_count", "eligible_count",
-    "penetration_rate", "data_year",
+    "contract_id",
+    "plan_id",
+    "county_fips",
+    "state_fips",
+    "state",
+    "year_month",
+    "enrollment_count",
+    "eligible_count",
+    "penetration_rate",
+    "data_year",
 ]
 
 
@@ -67,11 +74,7 @@ def transform_ma_enrollment(df: pd.DataFrame, data_year: int) -> pd.DataFrame:
 
     if "penetration_rate" in df.columns:
         # May come as "45.2%" — strip % and convert
-        df["penetration_rate"] = (
-            df["penetration_rate"].astype(str)
-            .str.replace("%", "", regex=False)
-            .str.strip()
-        )
+        df["penetration_rate"] = df["penetration_rate"].astype(str).str.replace("%", "", regex=False).str.strip()
         df["penetration_rate"] = pd.to_numeric(df["penetration_rate"], errors="coerce")
         # Convert to decimal if > 1 (i.e., 45.2 → 0.452)
         mask = df["penetration_rate"] > 1
@@ -109,8 +112,7 @@ def run(
     df = transform_ma_enrollment(df, data_year)
 
     parquet_path = (
-        PROJECT_ROOT / settings.storage.processed_base
-        / "ma_enrollment" / str(data_year) / "ma_enrollment.parquet"
+        PROJECT_ROOT / settings.storage.processed_base / "ma_enrollment" / str(data_year) / "ma_enrollment.parquet"
     )
     write_parquet(df, parquet_path)
     results["ma_enrollment_parquet"] = len(df)

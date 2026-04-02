@@ -15,18 +15,21 @@ from prefect.tasks import task_input_hash
 @task(retries=2, retry_delay_seconds=300, cache_key_fn=task_input_hash)
 def run_partb(data_year: int, run_date: date) -> dict[str, int]:
     from pipelines.partb.pipeline import run
+
     return run(run_date=run_date, data_year=data_year)
 
 
 @task(retries=2, retry_delay_seconds=300, cache_key_fn=task_input_hash)
 def run_partd(data_year: int, run_date: date) -> dict[str, int]:
     from pipelines.partd.pipeline import run
+
     return run(run_date=run_date, data_year=data_year)
 
 
 @task(retries=2, retry_delay_seconds=300, cache_key_fn=task_input_hash)
 def run_geovar(data_year: int, run_date: date) -> dict[str, int]:
     from pipelines.geovar.pipeline import run
+
     return run(run_date=run_date, data_year=data_year)
 
 
@@ -34,6 +37,7 @@ def run_geovar(data_year: int, run_date: date) -> dict[str, int]:
 def run_dbt() -> None:
     """Run dbt for intermediate and mart models."""
     import subprocess
+
     subprocess.run(
         ["dbt", "run", "--select", "tag:intermediate tag:mart"],
         check=True,
@@ -44,6 +48,7 @@ def run_dbt() -> None:
 @task(retries=1)
 def export_parquet() -> dict[str, int]:
     from scripts.export_marts_to_parquet import export_all
+
     return export_all()
 
 

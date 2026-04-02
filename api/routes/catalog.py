@@ -27,6 +27,7 @@ async def list_sources() -> list[CatalogSource]:
     except Exception:
         # Catalog tables may not be populated yet; return config-based list
         from pipelines._common.config import get_sources
+
         sources = get_sources()
         return [
             CatalogSource(

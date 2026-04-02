@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 class HospitalFinancialProfile(BaseModel):
     """Hospital financial profile from cost reports."""
+
     ccn: str
     facility_name: str | None = None
     provider_state: str | None = None
@@ -27,6 +28,7 @@ class HospitalFinancialProfile(BaseModel):
 
 class HospitalPerformance(BaseModel):
     """Hospital discharge performance with DRG mix."""
+
     ccn: str
     facility_name: str | None = None
     provider_state: str | None = None
@@ -42,6 +44,7 @@ class HospitalPerformance(BaseModel):
 
 class HospitalReadmission(BaseModel):
     """Hospital readmission summary."""
+
     ccn: str
     facility_name: str | None = None
     provider_state: str | None = None
@@ -57,6 +60,7 @@ class HospitalReadmission(BaseModel):
 
 class HospitalChargeVariation(BaseModel):
     """Hospital charge variation by DRG."""
+
     ccn: str
     facility_name: str | None = None
     drg_code: str

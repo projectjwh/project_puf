@@ -121,11 +121,7 @@ def extract_financial_metrics(
     # Pivot metrics from long to wide
     metrics = {}
     for (ws, line, col), metric_name in FINANCIAL_METRICS.items():
-        mask = (
-            (nmrc_df["worksheet"] == ws) &
-            (nmrc_df["line"] == line) &
-            (nmrc_df["column"] == col)
-        )
+        mask = (nmrc_df["worksheet"] == ws) & (nmrc_df["line"] == line) & (nmrc_df["column"] == col)
         metric_data = nmrc_df.loc[mask, ["rpt_rec_num", "value"]].copy()
         metric_data["value"] = pd.to_numeric(metric_data["value"], errors="coerce")
         metric_data = metric_data.rename(columns={"value": metric_name})
@@ -133,7 +129,7 @@ def extract_financial_metrics(
 
     # Join all metrics to report data
     result = rpt_df.set_index("rpt_rec_num")
-    for metric_name, series in metrics.items():
+    for _metric_name, series in metrics.items():
         result = result.join(series, how="left")
     result = result.reset_index()
 
@@ -211,6 +207,7 @@ def run(
             landing = resolve_landing_path("cost_reports", run_date, data_year)
             downloaded = download_file(source_def.url, landing)
             from pipelines._common.acquire import compute_hash
+
             file_hash = compute_hash(downloaded)
             if downloaded.suffix == ".zip":
                 extract_zip(downloaded, landing)
@@ -252,17 +249,19 @@ def run(
 
         # Write Parquet
         parquet_path = (
-            PROJECT_ROOT / settings.storage.processed_base /
-            "cost_reports" / str(data_year) / "cost_reports.parquet"
+            PROJECT_ROOT / settings.storage.processed_base / "cost_reports" / str(data_year) / "cost_reports.parquet"
         )
         write_parquet(rpt_df, parquet_path)
         results["cost_reports_parquet"] = len(rpt_df)
 
         duration = time.time() - start_time
         complete_pipeline_run(
-            run_id, "success", rows_processed=results.get("rpt_rows", 0),
+            run_id,
+            "success",
+            rows_processed=results.get("rpt_rows", 0),
             rows_loaded=results.get("cost_reports_parquet", 0),
-            file_hash=file_hash, duration_seconds=duration,
+            file_hash=file_hash,
+            duration_seconds=duration,
         )
         update_data_freshness("cost_reports", data_year, file_hash)
 
@@ -271,7 +270,6 @@ def run(
 
     except Exception as e:
         duration = time.time() - start_time
-        complete_pipeline_run(run_id, "failed", error_message=str(e),
-                              duration_seconds=duration)
+        complete_pipeline_run(run_id, "failed", error_message=str(e), duration_seconds=duration)
         record_pipeline_failure(run_id, e)
         raise

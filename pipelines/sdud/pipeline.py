@@ -50,25 +50,78 @@ COLUMN_MAPPING = {
 }
 
 STATE_ABBREV_TO_FIPS = {
-    "AL": "01", "AK": "02", "AZ": "04", "AR": "05", "CA": "06",
-    "CO": "08", "CT": "09", "DE": "10", "DC": "11", "FL": "12",
-    "GA": "13", "HI": "15", "ID": "16", "IL": "17", "IN": "18",
-    "IA": "19", "KS": "20", "KY": "21", "LA": "22", "ME": "23",
-    "MD": "24", "MA": "25", "MI": "26", "MN": "27", "MS": "28",
-    "MO": "29", "MT": "30", "NE": "31", "NV": "32", "NH": "33",
-    "NJ": "34", "NM": "35", "NY": "36", "NC": "37", "ND": "38",
-    "OH": "39", "OK": "40", "OR": "41", "PA": "42", "PR": "72",
-    "RI": "44", "SC": "45", "SD": "46", "TN": "47", "TX": "48",
-    "UT": "49", "VT": "50", "VA": "51", "VI": "78", "WA": "53",
-    "WV": "54", "WI": "55", "WY": "56",
+    "AL": "01",
+    "AK": "02",
+    "AZ": "04",
+    "AR": "05",
+    "CA": "06",
+    "CO": "08",
+    "CT": "09",
+    "DE": "10",
+    "DC": "11",
+    "FL": "12",
+    "GA": "13",
+    "HI": "15",
+    "ID": "16",
+    "IL": "17",
+    "IN": "18",
+    "IA": "19",
+    "KS": "20",
+    "KY": "21",
+    "LA": "22",
+    "ME": "23",
+    "MD": "24",
+    "MA": "25",
+    "MI": "26",
+    "MN": "27",
+    "MS": "28",
+    "MO": "29",
+    "MT": "30",
+    "NE": "31",
+    "NV": "32",
+    "NH": "33",
+    "NJ": "34",
+    "NM": "35",
+    "NY": "36",
+    "NC": "37",
+    "ND": "38",
+    "OH": "39",
+    "OK": "40",
+    "OR": "41",
+    "PA": "42",
+    "PR": "72",
+    "RI": "44",
+    "SC": "45",
+    "SD": "46",
+    "TN": "47",
+    "TX": "48",
+    "UT": "49",
+    "VT": "50",
+    "VA": "51",
+    "VI": "78",
+    "WA": "53",
+    "WV": "54",
+    "WI": "55",
+    "WY": "56",
 }
 
 STAGING_COLUMNS = [
-    "state", "state_fips", "ndc", "labeler_code", "product_code",
-    "package_size", "year", "quarter", "suppression_flag", "utilization_type",
-    "number_of_prescriptions", "total_amount_reimbursed",
-    "medicaid_amount_reimbursed", "non_medicaid_amount_reimbursed",
-    "units_reimbursed", "data_year",
+    "state",
+    "state_fips",
+    "ndc",
+    "labeler_code",
+    "product_code",
+    "package_size",
+    "year",
+    "quarter",
+    "suppression_flag",
+    "utilization_type",
+    "number_of_prescriptions",
+    "total_amount_reimbursed",
+    "medicaid_amount_reimbursed",
+    "non_medicaid_amount_reimbursed",
+    "units_reimbursed",
+    "data_year",
 ]
 
 
@@ -93,8 +146,12 @@ def transform_sdud(df: pd.DataFrame, data_year: int) -> pd.DataFrame:
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors="coerce").astype("Int64")
 
-    for col in ("total_amount_reimbursed", "medicaid_amount_reimbursed",
-                "non_medicaid_amount_reimbursed", "units_reimbursed"):
+    for col in (
+        "total_amount_reimbursed",
+        "medicaid_amount_reimbursed",
+        "non_medicaid_amount_reimbursed",
+        "units_reimbursed",
+    ):
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors="coerce").round(2)
 
@@ -132,9 +189,7 @@ def run(
     report.raise_if_blocked()
     df = transform_sdud(df, data_year)
 
-    parquet_path = (
-        PROJECT_ROOT / settings.storage.processed_base / "sdud" / str(data_year) / "sdud.parquet"
-    )
+    parquet_path = PROJECT_ROOT / settings.storage.processed_base / "sdud" / str(data_year) / "sdud.parquet"
     write_parquet(df, parquet_path)
     results["sdud_parquet"] = len(df)
 

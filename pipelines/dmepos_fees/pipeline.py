@@ -15,7 +15,7 @@ from pipelines._common.acquire import download_file, extract_zip, resolve_landin
 from pipelines._common.config import PROJECT_ROOT, get_pipeline_settings, get_source
 from pipelines._common.db import copy_dataframe_to_pg, write_parquet
 from pipelines._common.logging import get_logger
-from pipelines._common.transform import add_snapshot_metadata, clean_string_columns
+from pipelines._common.transform import add_snapshot_metadata
 from pipelines._common.validate import (
     ValidationReport,
     check_column_not_null,
@@ -37,7 +37,11 @@ COLUMN_MAPPING = {
 }
 
 OUTPUT_COLUMNS = [
-    "hcpcs_code", "modifier", "state", "fee_amount", "effective_quarter",
+    "hcpcs_code",
+    "modifier",
+    "state",
+    "fee_amount",
+    "effective_quarter",
 ]
 
 

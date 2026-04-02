@@ -1,6 +1,6 @@
 """National KPI endpoints."""
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter
 
 from api.schemas.national import NationalKPI
 from api.services.database import query_pg

@@ -3,9 +3,10 @@
 Provides connection factories, bulk COPY operations, and DuckDB Parquet reading.
 """
 
+from collections.abc import Generator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Generator
+from typing import Any
 
 import duckdb
 import pandas as pd
@@ -23,6 +24,7 @@ log = get_logger(stage="db")
 # ---------------------------------------------------------------------------
 # PostgreSQL
 # ---------------------------------------------------------------------------
+
 
 def get_pg_engine(use_pgbouncer: bool = True) -> Engine:
     """Create a SQLAlchemy engine for PostgreSQL.
@@ -121,6 +123,7 @@ def query_pg(sql: str, params: dict[str, Any] | None = None) -> pd.DataFrame:
 # DuckDB
 # ---------------------------------------------------------------------------
 
+
 def get_duckdb_connection() -> duckdb.DuckDBPyConnection:
     """Create an in-memory DuckDB connection."""
     conn = duckdb.connect()
@@ -186,7 +189,11 @@ def write_parquet(
         row_group_size=settings.parquet.row_group_size,
     )
 
-    log.info("parquet_written", path=str(path), rows=len(df),
-             compression=settings.parquet.compression,
-             has_metadata=bool(metadata))
+    log.info(
+        "parquet_written",
+        path=str(path),
+        rows=len(df),
+        compression=settings.parquet.compression,
+        has_metadata=bool(metadata),
+    )
     return path

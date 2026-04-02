@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 class HealthResponse(BaseModel):
     """Health check response."""
+
     status: str
     version: str
     pg_connected: bool
@@ -13,6 +14,7 @@ class HealthResponse(BaseModel):
 
 class CatalogSource(BaseModel):
     """Data source catalog entry."""
+
     source_name: str
     short_name: str
     publisher: str | None = None
@@ -26,12 +28,14 @@ class CatalogSource(BaseModel):
 
 class ErrorResponse(BaseModel):
     """Standard error response."""
+
     detail: str
     status_code: int
 
 
 class PaginationParams(BaseModel):
     """Common pagination parameters."""
+
     page: int = 1
     page_size: int = 25
 

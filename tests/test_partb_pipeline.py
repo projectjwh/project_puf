@@ -9,25 +9,27 @@ from pipelines.partb.pipeline import transform_partb, validate_partb
 @pytest.fixture
 def raw_partb_df():
     """Minimal Part B-like DataFrame after column rename."""
-    return pd.DataFrame({
-        "rendering_npi": ["1234567890", "0987654321", "1111111111"],
-        "rendering_npi_name": ["  SMITH JOHN  ", "  ACME CLINIC  ", "  DOE JANE  "],
-        "entity_type": ["I", "O", "I"],
-        "hcpcs_code": ["99213", "99214", "J0170"],
-        "hcpcs_description": ["Office Visit Level 3", "Office Visit Level 4", "Adrenalin Injection"],
-        "hcpcs_drug_indicator": ["N", "N", "Y"],
-        "place_of_service": ["F", "F", "O"],
-        "number_of_services": ["150", "200", "50"],
-        "number_of_beneficiaries": ["100", "120", "30"],
-        "avg_submitted_charge": ["125.50", "180.00", "45.00"],
-        "avg_medicare_allowed": ["85.00", "120.00", "30.00"],
-        "avg_medicare_payment": ["68.00", "96.00", "24.00"],
-        "avg_medicare_standardized": ["70.00", "100.00", "25.00"],
-        "provider_type": ["Internal Medicine", "Multispecialty", "Family Medicine"],
-        "provider_state": ["CA", "NY", "TX"],
-        "provider_zip5": ["90210", "10001", "73301"],
-        "medicare_participation": ["Y", "Y", "Y"],
-    })
+    return pd.DataFrame(
+        {
+            "rendering_npi": ["1234567890", "0987654321", "1111111111"],
+            "rendering_npi_name": ["  SMITH JOHN  ", "  ACME CLINIC  ", "  DOE JANE  "],
+            "entity_type": ["I", "O", "I"],
+            "hcpcs_code": ["99213", "99214", "J0170"],
+            "hcpcs_description": ["Office Visit Level 3", "Office Visit Level 4", "Adrenalin Injection"],
+            "hcpcs_drug_indicator": ["N", "N", "Y"],
+            "place_of_service": ["F", "F", "O"],
+            "number_of_services": ["150", "200", "50"],
+            "number_of_beneficiaries": ["100", "120", "30"],
+            "avg_submitted_charge": ["125.50", "180.00", "45.00"],
+            "avg_medicare_allowed": ["85.00", "120.00", "30.00"],
+            "avg_medicare_payment": ["68.00", "96.00", "24.00"],
+            "avg_medicare_standardized": ["70.00", "100.00", "25.00"],
+            "provider_type": ["Internal Medicine", "Multispecialty", "Family Medicine"],
+            "provider_state": ["CA", "NY", "TX"],
+            "provider_zip5": ["90210", "10001", "73301"],
+            "medicare_participation": ["Y", "Y", "Y"],
+        }
+    )
 
 
 class TestTransformPartb:
@@ -86,19 +88,23 @@ class TestValidatePartb:
         assert len(block_failures) == 0
 
     def test_missing_npi_blocks(self):
-        df = pd.DataFrame({
-            "rendering_npi": [None, "0987654321"],
-            "hcpcs_code": ["99213", "99214"],
-        })
+        df = pd.DataFrame(
+            {
+                "rendering_npi": [None, "0987654321"],
+                "hcpcs_code": ["99213", "99214"],
+            }
+        )
         report = validate_partb(df)
         not_null_failures = [r for r in report.block_failures if "not_null" in r.rule_name]
         assert len(not_null_failures) > 0
 
     def test_missing_hcpcs_blocks(self):
-        df = pd.DataFrame({
-            "rendering_npi": ["1234567890", "0987654321"],
-            "hcpcs_code": [None, "99214"],
-        })
+        df = pd.DataFrame(
+            {
+                "rendering_npi": ["1234567890", "0987654321"],
+                "hcpcs_code": [None, "99214"],
+            }
+        )
         report = validate_partb(df)
         not_null_failures = [r for r in report.block_failures if "not_null" in r.rule_name]
         assert len(not_null_failures) > 0

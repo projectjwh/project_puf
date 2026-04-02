@@ -45,8 +45,14 @@ COLUMN_MAPPING = {
 }
 
 STAGING_COLUMNS = [
-    "ccn", "work_date", "cna_hours", "lpn_hours", "rn_hours",
-    "total_nurse_hours", "physical_therapist_hours", "data_year",
+    "ccn",
+    "work_date",
+    "cna_hours",
+    "lpn_hours",
+    "rn_hours",
+    "total_nurse_hours",
+    "physical_therapist_hours",
+    "data_year",
 ]
 
 
@@ -64,8 +70,7 @@ def transform_pbj(df: pd.DataFrame, data_year: int) -> pd.DataFrame:
     if "work_date" in df.columns:
         df["work_date"] = pd.to_datetime(df["work_date"], errors="coerce").dt.date
 
-    for col in ("cna_hours", "lpn_hours", "rn_hours",
-                "total_nurse_hours", "physical_therapist_hours"):
+    for col in ("cna_hours", "lpn_hours", "rn_hours", "total_nurse_hours", "physical_therapist_hours"):
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors="coerce").round(2)
 
@@ -105,9 +110,7 @@ def run(
     report.raise_if_blocked()
     df = transform_pbj(df, data_year)
 
-    parquet_path = (
-        PROJECT_ROOT / settings.storage.processed_base / "pbj" / str(data_year) / "pbj_staffing.parquet"
-    )
+    parquet_path = PROJECT_ROOT / settings.storage.processed_base / "pbj" / str(data_year) / "pbj_staffing.parquet"
     write_parquet(df, parquet_path)
     results["pbj_parquet"] = len(df)
 

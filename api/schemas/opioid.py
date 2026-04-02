@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 class OpioidByState(BaseModel):
     """State-level opioid prescribing metrics."""
+
     state_fips: str
     state_name: str | None = None
     state_abbreviation: str | None = None
@@ -25,6 +26,7 @@ class OpioidByState(BaseModel):
 
 class OpioidTopPrescriber(BaseModel):
     """Individual opioid prescriber with ranking."""
+
     prescriber_npi: str
     data_year: int
     display_name: str | None = None

@@ -11,8 +11,16 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from api.routes import (
-    catalog, drugs, geographic, health, hospitals,
-    national, opioid, postacute, providers, specialties,
+    catalog,
+    drugs,
+    geographic,
+    health,
+    hospitals,
+    national,
+    opioid,
+    postacute,
+    providers,
+    specialties,
 )
 
 
@@ -23,6 +31,7 @@ async def lifespan(app: FastAPI):
     yield
     # Shutdown: close database connections
     from api.services.database import close_all
+
     close_all()
 
 

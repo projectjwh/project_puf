@@ -19,8 +19,11 @@ def _transform_rvu(df: pd.DataFrame) -> pd.DataFrame:
 
     # Cast numeric columns
     numeric_cols = [
-        "work_rvu", "facility_pe_rvu", "nonfacility_pe_rvu",
-        "malpractice_rvu", "conversion_factor",
+        "work_rvu",
+        "facility_pe_rvu",
+        "nonfacility_pe_rvu",
+        "malpractice_rvu",
+        "conversion_factor",
     ]
     for col in numeric_cols:
         if col in df.columns:
@@ -61,11 +64,21 @@ config = ReferenceSourceConfig(
     },
     required_source_columns=["HCPCS"],
     select_columns=[
-        "hcpcs_code", "modifier", "description", "status_code",
-        "work_rvu", "facility_pe_rvu", "nonfacility_pe_rvu", "malpractice_rvu",
-        "total_facility_rvu", "total_nonfacility_rvu",
-        "conversion_factor", "facility_payment", "nonfacility_payment",
-        "global_days", "pctc_indicator",
+        "hcpcs_code",
+        "modifier",
+        "description",
+        "status_code",
+        "work_rvu",
+        "facility_pe_rvu",
+        "nonfacility_pe_rvu",
+        "malpractice_rvu",
+        "total_facility_rvu",
+        "total_nonfacility_rvu",
+        "conversion_factor",
+        "facility_payment",
+        "nonfacility_payment",
+        "global_days",
+        "pctc_indicator",
     ],
     min_rows=10_000,
     max_rows=20_000,

@@ -9,20 +9,22 @@ from pipelines.geovar.pipeline import transform_geovar, validate_geovar
 @pytest.fixture
 def raw_geovar_df():
     """Minimal GeoVar-like DataFrame after column rename."""
-    return pd.DataFrame({
-        "bene_geo_lvl": ["National", "State", "State", "County"],
-        "bene_geo_desc": ["National", "California", "New York", "Los Angeles, CA"],
-        "bene_geo_cd": ["0", "06", "36", "06037"],
-        "total_beneficiaries": ["60000000", "5000000", "3000000", "500000"],
-        "total_beneficiaries_ffs": ["35000000", "2500000", "1500000", "250000"],
-        "total_beneficiaries_ma": ["25000000", "2500000", "1500000", "250000"],
-        "ma_participation_rate": ["0.4167", "0.5000", "0.5000", "0.5000"],
-        "total_actual_costs": ["600000000000", "50000000000", "30000000000", "5000000000"],
-        "actual_per_capita_costs": ["10000.00", "10000.00", "10000.00", "10000.00"],
-        "standardized_per_capita_costs": ["9500.00", "10500.00", "11000.00", "10200.00"],
-        "ip_per_capita_costs": ["3000.00", "3200.00", "3500.00", "3100.00"],
-        "readmission_rate": ["0.1500", "0.1400", "0.1600", "0.1450"],
-    })
+    return pd.DataFrame(
+        {
+            "bene_geo_lvl": ["National", "State", "State", "County"],
+            "bene_geo_desc": ["National", "California", "New York", "Los Angeles, CA"],
+            "bene_geo_cd": ["0", "06", "36", "06037"],
+            "total_beneficiaries": ["60000000", "5000000", "3000000", "500000"],
+            "total_beneficiaries_ffs": ["35000000", "2500000", "1500000", "250000"],
+            "total_beneficiaries_ma": ["25000000", "2500000", "1500000", "250000"],
+            "ma_participation_rate": ["0.4167", "0.5000", "0.5000", "0.5000"],
+            "total_actual_costs": ["600000000000", "50000000000", "30000000000", "5000000000"],
+            "actual_per_capita_costs": ["10000.00", "10000.00", "10000.00", "10000.00"],
+            "standardized_per_capita_costs": ["9500.00", "10500.00", "11000.00", "10200.00"],
+            "ip_per_capita_costs": ["3000.00", "3200.00", "3500.00", "3100.00"],
+            "readmission_rate": ["0.1500", "0.1400", "0.1600", "0.1450"],
+        }
+    )
 
 
 class TestTransformGeovar:
@@ -70,10 +72,12 @@ class TestValidateGeovar:
         assert len(block_failures) == 0
 
     def test_missing_geo_level_blocks(self):
-        df = pd.DataFrame({
-            "bene_geo_lvl": [None, "State"],
-            "bene_geo_cd": ["0", "06"],
-        })
+        df = pd.DataFrame(
+            {
+                "bene_geo_lvl": [None, "State"],
+                "bene_geo_cd": ["0", "06"],
+            }
+        )
         report = validate_geovar(df)
         not_null_failures = [r for r in report.block_failures if "not_null" in r.rule_name]
         assert len(not_null_failures) > 0

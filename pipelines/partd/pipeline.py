@@ -63,14 +63,25 @@ COLUMN_MAPPING = {
 }
 
 STAGING_COLUMNS = [
-    "prescriber_npi", "prescriber_last_name", "prescriber_first_name",
-    "prescriber_state", "prescriber_state_fips", "specialty_description",
-    "drug_name", "generic_name",
-    "total_claim_count", "total_day_supply", "total_drug_cost",
+    "prescriber_npi",
+    "prescriber_last_name",
+    "prescriber_first_name",
+    "prescriber_state",
+    "prescriber_state_fips",
+    "specialty_description",
+    "drug_name",
+    "generic_name",
+    "total_claim_count",
+    "total_day_supply",
+    "total_drug_cost",
     "total_beneficiary_count",
-    "cost_per_claim", "cost_per_day",
-    "is_brand_name", "is_generic",
-    "is_opioid", "opioid_claim_count", "opioid_prescriber_rate",
+    "cost_per_claim",
+    "cost_per_day",
+    "is_brand_name",
+    "is_generic",
+    "is_opioid",
+    "opioid_claim_count",
+    "opioid_prescriber_rate",
     "ge65_suppress_flag",
     "data_year",
 ]
@@ -93,19 +104,24 @@ def transform_partd(df: pd.DataFrame, data_year: int) -> pd.DataFrame:
     df["prescriber_npi"] = normalize_npi(df["prescriber_npi"])
 
     # Clean string columns
-    clean_string_columns(df, ["drug_name", "generic_name", "specialty_description",
-                              "prescriber_last_name", "prescriber_first_name"])
+    clean_string_columns(
+        df, ["drug_name", "generic_name", "specialty_description", "prescriber_last_name", "prescriber_first_name"]
+    )
 
     # State FIPS derivation
     from pipelines.nppes.pipeline import STATE_ABBREV_TO_FIPS
+
     if "prescriber_state" in df.columns:
         df["prescriber_state"] = df["prescriber_state"].astype(str).str.strip().str.upper()
         df["prescriber_state_fips"] = df["prescriber_state"].map(STATE_ABBREV_TO_FIPS)
 
     # Cast numeric columns
     numeric_cols = [
-        "total_claim_count", "total_day_supply", "total_drug_cost",
-        "total_beneficiary_count", "opioid_claim_count",
+        "total_claim_count",
+        "total_day_supply",
+        "total_drug_cost",
+        "total_beneficiary_count",
+        "opioid_claim_count",
     ]
     for col in numeric_cols:
         if col in df.columns:
@@ -189,6 +205,7 @@ def run(
             landing = resolve_landing_path("partd", run_date, data_year)
             downloaded = download_file(source_def.url, landing)
             from pipelines._common.acquire import compute_hash
+
             file_hash = compute_hash(downloaded)
             if downloaded.suffix == ".zip":
                 extract_zip(downloaded, landing)
@@ -220,8 +237,7 @@ def run(
 
         # Write Parquet
         parquet_path = (
-            PROJECT_ROOT / settings.storage.processed_base
-            / "partd" / str(data_year) / "part_d_prescribers.parquet"
+            PROJECT_ROOT / settings.storage.processed_base / "partd" / str(data_year) / "part_d_prescribers.parquet"
         )
         write_parquet(df, parquet_path)
         results["partd_parquet"] = len(df)
@@ -229,14 +245,21 @@ def run(
         # Load to staging (PostgreSQL)
         out_cols = [c for c in STAGING_COLUMNS if c in df.columns]
         rows = copy_dataframe_to_pg(
-            df[out_cols], "stg_cms__part_d_prescribers", "staging", if_exists="append",
+            df[out_cols],
+            "stg_cms__part_d_prescribers",
+            "staging",
+            if_exists="append",
         )
         results["stg_part_d"] = rows
 
         duration = time.time() - start_time
         complete_pipeline_run(
-            run_id, "success", rows_processed=results.get("partd_rows", 0),
-            rows_loaded=rows, file_hash=file_hash, duration_seconds=duration,
+            run_id,
+            "success",
+            rows_processed=results.get("partd_rows", 0),
+            rows_loaded=rows,
+            file_hash=file_hash,
+            duration_seconds=duration,
         )
         update_data_freshness("partd", data_year, file_hash)
 
@@ -245,7 +268,6 @@ def run(
 
     except Exception as e:
         duration = time.time() - start_time
-        complete_pipeline_run(run_id, "failed", error_message=str(e),
-                              duration_seconds=duration)
+        complete_pipeline_run(run_id, "failed", error_message=str(e), duration_seconds=duration)
         record_pipeline_failure(run_id, e)
         raise

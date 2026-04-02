@@ -48,11 +48,23 @@ COLUMN_MAPPING = {
 }
 
 OUTPUT_COLUMNS = [
-    "ccn", "facility_name", "address", "city", "state", "zip_code",
-    "county_name", "phone_number", "hospital_type", "hospital_ownership",
-    "emergency_services", "meets_ehr_criteria", "overall_rating",
-    "mortality_national_comparison", "safety_national_comparison",
-    "readmission_national_comparison", "patient_experience_national_comparison",
+    "ccn",
+    "facility_name",
+    "address",
+    "city",
+    "state",
+    "zip_code",
+    "county_name",
+    "phone_number",
+    "hospital_type",
+    "hospital_ownership",
+    "emergency_services",
+    "meets_ehr_criteria",
+    "overall_rating",
+    "mortality_national_comparison",
+    "safety_national_comparison",
+    "readmission_national_comparison",
+    "patient_experience_national_comparison",
 ]
 
 

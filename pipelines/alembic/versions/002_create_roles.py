@@ -4,14 +4,15 @@ Revision ID: 002
 Revises: 001
 Create Date: 2026-03-04
 """
-from typing import Sequence, Union
+
+from collections.abc import Sequence
 
 from alembic import op
 
 revision: str = "002"
-down_revision: Union[str, None] = "001"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = "001"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def _create_role_if_not_exists(role: str, password: str | None = None) -> None:
@@ -42,8 +43,7 @@ def upgrade() -> None:
         op.execute(f"GRANT USAGE, CREATE ON SCHEMA {schema} TO puf_dbt")
         op.execute(f"GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA {schema} TO puf_dbt")
         op.execute(
-            f"ALTER DEFAULT PRIVILEGES IN SCHEMA {schema} "
-            f"GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO puf_dbt"
+            f"ALTER DEFAULT PRIVILEGES IN SCHEMA {schema} GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO puf_dbt"
         )
     for schema in ("reference", "catalog"):
         op.execute(f"GRANT USAGE ON SCHEMA {schema} TO puf_dbt")

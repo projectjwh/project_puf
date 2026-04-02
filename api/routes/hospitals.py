@@ -48,6 +48,7 @@ async def get_hospital_financial_by_ccn(ccn: str, data_year: int = Query(2022)):
     rows = query_pg(sql, {"ccn": ccn.zfill(6), "data_year": data_year})
     if not rows:
         from fastapi import HTTPException
+
         raise HTTPException(status_code=404, detail=f"Hospital {ccn} not found")
     return rows[0]
 

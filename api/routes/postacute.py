@@ -47,6 +47,7 @@ async def get_snf_by_ccn(ccn: str):
     rows = query_pg(sql, {"ccn": ccn.zfill(6)})
     if not rows:
         from fastapi import HTTPException
+
         raise HTTPException(status_code=404, detail=f"SNF {ccn} not found")
     return rows[0]
 

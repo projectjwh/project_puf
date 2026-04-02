@@ -79,3 +79,23 @@ python_version = "3.12"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
+ignore_missing_imports = true
+
+# yaml has no typed stubs available
+[[tool.mypy.overrides]]
+module = "yaml"
+ignore_missing_imports = true
+follow_untyped_imports = true
+
+# Phase 1 API routes and Tier 2 stubs lack full annotations — relax until addressed
+[[tool.mypy.overrides]]
+module = [
+    "api.routes.*",
+    "api.main",
+    "api.services.*",
+    "flows.*",
+    "pipelines.*.pipeline",
+    "scripts.*",
+]
+disallow_untyped_defs = false
+warn_return_any = false

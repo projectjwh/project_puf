@@ -7,15 +7,16 @@ Revision ID: 006
 Revises: 005
 Create Date: 2026-03-04
 """
-from typing import Sequence, Union
+
+from collections.abc import Sequence
 
 import sqlalchemy as sa
 from alembic import op
 
 revision: str = "006"
-down_revision: Union[str, None] = "005"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = "005"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
@@ -36,11 +37,16 @@ def upgrade() -> None:
         schema="reference",
     )
     op.create_index(
-        "ix_ref_icd10_cm_formatted", "ref_icd10_cm", ["icd10_cm_code_formatted"],
+        "ix_ref_icd10_cm_formatted",
+        "ref_icd10_cm",
+        ["icd10_cm_code_formatted"],
         schema="reference",
     )
     op.create_index(
-        "ix_ref_icd10_cm_chapter", "ref_icd10_cm", ["chapter"], schema="reference",
+        "ix_ref_icd10_cm_chapter",
+        "ref_icd10_cm",
+        ["chapter"],
+        schema="reference",
     )
 
     # ref_icd10_pcs — ~78,000 procedure codes
@@ -59,7 +65,10 @@ def upgrade() -> None:
         schema="reference",
     )
     op.create_index(
-        "ix_ref_icd10_pcs_section", "ref_icd10_pcs", ["section"], schema="reference",
+        "ix_ref_icd10_pcs_section",
+        "ref_icd10_pcs",
+        ["section"],
+        schema="reference",
     )
 
     # ref_hcpcs_codes — ~7,500 codes (CPT Level I + HCPCS Level II)
@@ -81,7 +90,10 @@ def upgrade() -> None:
         schema="reference",
     )
     op.create_index(
-        "ix_ref_hcpcs_active", "ref_hcpcs_codes", ["is_active"], schema="reference",
+        "ix_ref_hcpcs_active",
+        "ref_hcpcs_codes",
+        ["is_active"],
+        schema="reference",
     )
 
     # ref_msdrg — ~800 MS-DRG codes
@@ -100,10 +112,16 @@ def upgrade() -> None:
         schema="reference",
     )
     op.create_primary_key(
-        "pk_ref_msdrg", "ref_msdrg", ["drg_code", "fiscal_year"], schema="reference",
+        "pk_ref_msdrg",
+        "ref_msdrg",
+        ["drg_code", "fiscal_year"],
+        schema="reference",
     )
     op.create_index(
-        "ix_ref_msdrg_mdc", "ref_msdrg", ["mdc_code"], schema="reference",
+        "ix_ref_msdrg_mdc",
+        "ref_msdrg",
+        ["mdc_code"],
+        schema="reference",
     )
 
     # ref_ndc — ~300,000 National Drug Codes
@@ -129,13 +147,22 @@ def upgrade() -> None:
         schema="reference",
     )
     op.create_index(
-        "ix_ref_ndc_generic", "ref_ndc", ["generic_name"], schema="reference",
+        "ix_ref_ndc_generic",
+        "ref_ndc",
+        ["generic_name"],
+        schema="reference",
     )
     op.create_index(
-        "ix_ref_ndc_brand", "ref_ndc", ["brand_name"], schema="reference",
+        "ix_ref_ndc_brand",
+        "ref_ndc",
+        ["brand_name"],
+        schema="reference",
     )
     op.create_index(
-        "ix_ref_ndc_dea", "ref_ndc", ["dea_schedule"], schema="reference",
+        "ix_ref_ndc_dea",
+        "ref_ndc",
+        ["dea_schedule"],
+        schema="reference",
     )
 
     # ref_nucc_taxonomy — ~900 provider taxonomy codes
@@ -152,7 +179,9 @@ def upgrade() -> None:
         schema="reference",
     )
     op.create_index(
-        "ix_ref_nucc_classification", "ref_nucc_taxonomy", ["classification"],
+        "ix_ref_nucc_classification",
+        "ref_nucc_taxonomy",
+        ["classification"],
         schema="reference",
     )
 

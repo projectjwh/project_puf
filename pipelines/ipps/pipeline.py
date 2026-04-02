@@ -17,8 +17,11 @@ def _transform_ipps(df: pd.DataFrame) -> pd.DataFrame:
     df["drg_code"] = df["drg_code"].str.strip().str.zfill(3)
 
     numeric_cols = [
-        "relative_weight", "geometric_mean_los", "arithmetic_mean_los",
-        "average_payment", "discharge_count",
+        "relative_weight",
+        "geometric_mean_los",
+        "arithmetic_mean_los",
+        "average_payment",
+        "discharge_count",
     ]
     for col in numeric_cols:
         if col in df.columns:
@@ -45,9 +48,13 @@ config = ReferenceSourceConfig(
     },
     required_source_columns=[],  # Column names vary by fiscal year
     select_columns=[
-        "drg_code", "drg_description", "relative_weight",
-        "geometric_mean_los", "arithmetic_mean_los",
-        "average_payment", "discharge_count",
+        "drg_code",
+        "drg_description",
+        "relative_weight",
+        "geometric_mean_los",
+        "arithmetic_mean_los",
+        "average_payment",
+        "discharge_count",
     ],
     min_rows=600,
     max_rows=1_000,

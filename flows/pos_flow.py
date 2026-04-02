@@ -12,6 +12,7 @@ log = get_logger(source="pos_flow")
 @task(name="run-pos-pipeline", retries=2, retry_delay_seconds=[300, 900])
 def run_pos_pipeline(run_date: date) -> dict[str, int]:
     from pipelines.pos.pipeline import run
+
     return run(run_date=run_date)
 
 

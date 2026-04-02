@@ -6,15 +6,16 @@ Revision ID: 008
 Revises: 007
 Create Date: 2026-03-04
 """
-from typing import Sequence, Union
+
+from collections.abc import Sequence
 
 import sqlalchemy as sa
 from alembic import op
 
 revision: str = "008"
-down_revision: Union[str, None] = "007"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = "007"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
@@ -85,16 +86,22 @@ def upgrade() -> None:
         schema="reference",
     )
     op.create_primary_key(
-        "pk_ref_provider_taxonomies", "ref_provider_taxonomies",
-        ["npi", "taxonomy_code", "taxonomy_slot"], schema="reference",
+        "pk_ref_provider_taxonomies",
+        "ref_provider_taxonomies",
+        ["npi", "taxonomy_code", "taxonomy_slot"],
+        schema="reference",
     )
     op.create_index(
-        "ix_ref_provider_taxonomies_npi", "ref_provider_taxonomies",
-        ["npi"], schema="reference",
+        "ix_ref_provider_taxonomies_npi",
+        "ref_provider_taxonomies",
+        ["npi"],
+        schema="reference",
     )
     op.create_index(
-        "ix_ref_provider_taxonomies_code", "ref_provider_taxonomies",
-        ["taxonomy_code"], schema="reference",
+        "ix_ref_provider_taxonomies_code",
+        "ref_provider_taxonomies",
+        ["taxonomy_code"],
+        schema="reference",
     )
 
     # ref_pos_facilities — ~300K rows (Provider of Services file)

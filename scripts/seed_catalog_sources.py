@@ -8,11 +8,11 @@ Usage:
     # or: make seed-catalog
 """
 
+from sqlalchemy import text
+
 from pipelines._common.config import get_sources
 from pipelines._common.db import get_pg_engine
 from pipelines._common.logging import get_logger, setup_logging
-
-from sqlalchemy import text
 
 log = get_logger(stage="seed")
 
@@ -31,7 +31,7 @@ def seed_sources() -> int:
     count = 0
 
     with engine.connect() as conn:
-        for short_name, defn in sources.items():
+        for _short_name, defn in sources.items():
             # Determine category from the source's position in sources.yaml
             # (not available directly from SourceDefinition, use tier as proxy)
             conn.execute(

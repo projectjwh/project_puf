@@ -8,22 +8,24 @@ from pipelines.pos.pipeline import transform_pos, validate_pos
 
 @pytest.fixture
 def raw_pos_df():
-    return pd.DataFrame({
-        "ccn": ["50001", "330001", "670001"],
-        "facility_name": ["  Memorial Hospital  ", "NYC Medical", "  Austin Health  "],
-        "facility_type": ["Short Term", "Short Term", "Long Term"],
-        "facility_type_code": ["01", "01", "02"],
-        "ownership_type": ["Voluntary", "Government", "Proprietary"],
-        "ownership_code": ["02", "05", "04"],
-        "state": ["CA", "NY", "TX"],
-        "zip_full": ["90210-1234", "10001", "73301"],
-        "bed_count": ["200", "500", "bad"],
-        "bed_count_total": ["250", "600", "100"],
-        "certification_date": ["2000-01-15", "1995-06-20", "2010-03-01"],
-        "termination_date": [None, None, "2023-12-31"],
-        "medicare_participation_code": ["1", "1", "1"],
-        "medicaid_participation_code": ["1", "1", None],
-    })
+    return pd.DataFrame(
+        {
+            "ccn": ["50001", "330001", "670001"],
+            "facility_name": ["  Memorial Hospital  ", "NYC Medical", "  Austin Health  "],
+            "facility_type": ["Short Term", "Short Term", "Long Term"],
+            "facility_type_code": ["01", "01", "02"],
+            "ownership_type": ["Voluntary", "Government", "Proprietary"],
+            "ownership_code": ["02", "05", "04"],
+            "state": ["CA", "NY", "TX"],
+            "zip_full": ["90210-1234", "10001", "73301"],
+            "bed_count": ["200", "500", "bad"],
+            "bed_count_total": ["250", "600", "100"],
+            "certification_date": ["2000-01-15", "1995-06-20", "2010-03-01"],
+            "termination_date": [None, None, "2023-12-31"],
+            "medicare_participation_code": ["1", "1", "1"],
+            "medicaid_participation_code": ["1", "1", None],
+        }
+    )
 
 
 class TestTransformPos:

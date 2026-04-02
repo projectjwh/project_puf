@@ -67,16 +67,31 @@ COLUMN_MAPPING = {
 }
 
 STAGING_COLUMNS = [
-    "bene_geo_lvl", "bene_geo_desc", "bene_geo_cd",
-    "state_fips", "county_fips",
-    "total_beneficiaries", "total_beneficiaries_ffs", "total_beneficiaries_ma",
+    "bene_geo_lvl",
+    "bene_geo_desc",
+    "bene_geo_cd",
+    "state_fips",
+    "county_fips",
+    "total_beneficiaries",
+    "total_beneficiaries_ffs",
+    "total_beneficiaries_ma",
     "ma_participation_rate",
-    "total_actual_costs", "actual_per_capita_costs", "standardized_per_capita_costs",
-    "ip_per_capita_costs", "op_per_capita_costs", "snf_per_capita_costs",
-    "hha_per_capita_costs", "hospice_per_capita_costs",
-    "partb_per_capita_costs", "partd_per_capita_costs", "dme_per_capita_costs",
-    "ip_covered_stays_per_1000", "op_visits_per_1000", "er_visits_per_1000",
-    "readmission_rate", "ed_visit_rate",
+    "total_actual_costs",
+    "actual_per_capita_costs",
+    "standardized_per_capita_costs",
+    "ip_per_capita_costs",
+    "op_per_capita_costs",
+    "snf_per_capita_costs",
+    "hha_per_capita_costs",
+    "hospice_per_capita_costs",
+    "partb_per_capita_costs",
+    "partd_per_capita_costs",
+    "dme_per_capita_costs",
+    "ip_covered_stays_per_1000",
+    "op_visits_per_1000",
+    "er_visits_per_1000",
+    "readmission_rate",
+    "ed_visit_rate",
     "data_year",
 ]
 
@@ -88,9 +103,11 @@ def validate_geovar(df: pd.DataFrame) -> ValidationReport:
     check_column_not_null(df, "bene_geo_lvl", report, severity="BLOCK")
     if "bene_geo_lvl" in df.columns:
         check_value_set(
-            df, "bene_geo_lvl",
+            df,
+            "bene_geo_lvl",
             {"State", "County", "National", "STATE", "COUNTY", "NATIONAL"},
-            report, severity="WARN",
+            report,
+            severity="WARN",
         )
     check_row_count(df, min_rows=3_000, max_rows=5_000, report=report, severity="WARN")
     return report
@@ -117,14 +134,26 @@ def transform_geovar(df: pd.DataFrame, data_year: int) -> pd.DataFrame:
 
     # Cast numeric columns
     numeric_cols = [
-        "total_beneficiaries", "total_beneficiaries_ffs", "total_beneficiaries_ma",
+        "total_beneficiaries",
+        "total_beneficiaries_ffs",
+        "total_beneficiaries_ma",
         "ma_participation_rate",
-        "total_actual_costs", "actual_per_capita_costs", "standardized_per_capita_costs",
-        "ip_per_capita_costs", "op_per_capita_costs", "snf_per_capita_costs",
-        "hha_per_capita_costs", "hospice_per_capita_costs",
-        "partb_per_capita_costs", "partd_per_capita_costs", "dme_per_capita_costs",
-        "ip_covered_stays_per_1000", "op_visits_per_1000", "er_visits_per_1000",
-        "readmission_rate", "ed_visit_rate",
+        "total_actual_costs",
+        "actual_per_capita_costs",
+        "standardized_per_capita_costs",
+        "ip_per_capita_costs",
+        "op_per_capita_costs",
+        "snf_per_capita_costs",
+        "hha_per_capita_costs",
+        "hospice_per_capita_costs",
+        "partb_per_capita_costs",
+        "partd_per_capita_costs",
+        "dme_per_capita_costs",
+        "ip_covered_stays_per_1000",
+        "op_visits_per_1000",
+        "er_visits_per_1000",
+        "readmission_rate",
+        "ed_visit_rate",
     ]
     for col in numeric_cols:
         if col in df.columns:
@@ -185,6 +214,7 @@ def run(
             landing = resolve_landing_path("geovar", run_date, data_year)
             csv_path = download_file(source_def.url, landing)
             from pipelines._common.acquire import compute_hash
+
             file_hash = compute_hash(csv_path)
 
         log.info("reading_csv", path=str(csv_path))
@@ -209,8 +239,7 @@ def run(
 
         # Write Parquet
         parquet_path = (
-            PROJECT_ROOT / settings.storage.processed_base
-            / "geovar" / str(data_year) / "geographic_variation.parquet"
+            PROJECT_ROOT / settings.storage.processed_base / "geovar" / str(data_year) / "geographic_variation.parquet"
         )
         write_parquet(df, parquet_path)
         results["geovar_parquet"] = len(df)
@@ -218,14 +247,21 @@ def run(
         # Load to staging
         out_cols = [c for c in STAGING_COLUMNS if c in df.columns]
         rows = copy_dataframe_to_pg(
-            df[out_cols], "stg_cms__geographic_variation", "staging", if_exists="append",
+            df[out_cols],
+            "stg_cms__geographic_variation",
+            "staging",
+            if_exists="append",
         )
         results["stg_geovar"] = rows
 
         duration = time.time() - start_time
         complete_pipeline_run(
-            run_id, "success", rows_processed=results.get("geovar_rows", 0),
-            rows_loaded=rows, file_hash=file_hash, duration_seconds=duration,
+            run_id,
+            "success",
+            rows_processed=results.get("geovar_rows", 0),
+            rows_loaded=rows,
+            file_hash=file_hash,
+            duration_seconds=duration,
         )
         update_data_freshness("geovar", data_year, file_hash)
 
@@ -234,7 +270,6 @@ def run(
 
     except Exception as e:
         duration = time.time() - start_time
-        complete_pipeline_run(run_id, "failed", error_message=str(e),
-                              duration_seconds=duration)
+        complete_pipeline_run(run_id, "failed", error_message=str(e), duration_seconds=duration)
         record_pipeline_failure(run_id, e)
         raise

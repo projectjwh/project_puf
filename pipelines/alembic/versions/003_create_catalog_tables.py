@@ -6,15 +6,16 @@ Revision ID: 003
 Revises: 002
 Create Date: 2026-03-04
 """
-from typing import Sequence, Union
+
+from collections.abc import Sequence
 
 import sqlalchemy as sa
 from alembic import op
 
 revision: str = "003"
-down_revision: Union[str, None] = "002"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = "002"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
@@ -53,9 +54,7 @@ def upgrade() -> None:
         sa.Column("created_at", sa.DateTime, server_default=sa.text("NOW()")),
         schema="catalog",
     )
-    op.create_index(
-        "ix_source_columns_source_id", "source_columns", ["source_id"], schema="catalog"
-    )
+    op.create_index("ix_source_columns_source_id", "source_columns", ["source_id"], schema="catalog")
 
     # 3. catalog.pipeline_runs — execution log
     op.create_table(
@@ -77,12 +76,8 @@ def upgrade() -> None:
         sa.Column("completed_at", sa.DateTime),
         schema="catalog",
     )
-    op.create_index(
-        "ix_pipeline_runs_source_date", "pipeline_runs", ["source_id", "run_date"], schema="catalog"
-    )
-    op.create_index(
-        "ix_pipeline_runs_status", "pipeline_runs", ["status"], schema="catalog"
-    )
+    op.create_index("ix_pipeline_runs_source_date", "pipeline_runs", ["source_id", "run_date"], schema="catalog")
+    op.create_index("ix_pipeline_runs_status", "pipeline_runs", ["status"], schema="catalog")
 
     # 4. catalog.pipeline_failures — failure details with classification
     op.create_table(
@@ -97,9 +92,7 @@ def upgrade() -> None:
         sa.Column("created_at", sa.DateTime, server_default=sa.text("NOW()")),
         schema="catalog",
     )
-    op.create_index(
-        "ix_pipeline_failures_run_id", "pipeline_failures", ["run_id"], schema="catalog"
-    )
+    op.create_index("ix_pipeline_failures_run_id", "pipeline_failures", ["run_id"], schema="catalog")
 
     # 5. catalog.validation_runs — per-load quality scores
     op.create_table(
@@ -116,12 +109,8 @@ def upgrade() -> None:
         sa.Column("created_at", sa.DateTime, server_default=sa.text("NOW()")),
         schema="catalog",
     )
-    op.create_index(
-        "ix_validation_runs_run_id", "validation_runs", ["run_id"], schema="catalog"
-    )
-    op.create_index(
-        "ix_validation_runs_severity", "validation_runs", ["severity", "passed"], schema="catalog"
-    )
+    op.create_index("ix_validation_runs_run_id", "validation_runs", ["run_id"], schema="catalog")
+    op.create_index("ix_validation_runs_severity", "validation_runs", ["severity", "passed"], schema="catalog")
 
     # 6. catalog.quarantine_rows — rows failing validation
     op.create_table(
@@ -135,12 +124,8 @@ def upgrade() -> None:
         sa.Column("created_at", sa.DateTime, server_default=sa.text("NOW()")),
         schema="catalog",
     )
-    op.create_index(
-        "ix_quarantine_rows_run_id", "quarantine_rows", ["run_id"], schema="catalog"
-    )
-    op.create_index(
-        "ix_quarantine_rows_source_id", "quarantine_rows", ["source_id"], schema="catalog"
-    )
+    op.create_index("ix_quarantine_rows_run_id", "quarantine_rows", ["run_id"], schema="catalog")
+    op.create_index("ix_quarantine_rows_source_id", "quarantine_rows", ["source_id"], schema="catalog")
 
     # 7. catalog.data_freshness — staleness tracking
     op.create_table(
@@ -157,9 +142,7 @@ def upgrade() -> None:
         sa.Column("updated_at", sa.DateTime, server_default=sa.text("NOW()")),
         schema="catalog",
     )
-    op.create_index(
-        "ix_data_freshness_source_id", "data_freshness", ["source_id"], schema="catalog"
-    )
+    op.create_index("ix_data_freshness_source_id", "data_freshness", ["source_id"], schema="catalog")
     op.create_unique_constraint(
         "uq_data_freshness_source_year", "data_freshness", ["source_id", "data_year"], schema="catalog"
     )

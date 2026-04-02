@@ -1,13 +1,14 @@
 """Tests for API Pydantic schemas — validates response shapes."""
 
-import pytest
 from datetime import date
 
-from api.schemas.providers import ProviderProfile, ProviderSummary, ProviderSearchResponse
+import pytest
+
+from api.schemas.common import CatalogSource, HealthResponse, PaginationParams
 from api.schemas.geographic import StateSpending, StateSummary
 from api.schemas.national import NationalKPI
 from api.schemas.opioid import OpioidByState, OpioidTopPrescriber
-from api.schemas.common import HealthResponse, CatalogSource, PaginationParams
+from api.schemas.providers import ProviderProfile, ProviderSearchResponse, ProviderSummary
 
 
 class TestProviderSchemas:
@@ -156,6 +157,7 @@ class TestCommonSchemas:
 
 try:
     import fastapi  # noqa: F401
+
     _has_fastapi = True
 except ImportError:
     _has_fastapi = False
@@ -166,36 +168,45 @@ _skip_no_fastapi = pytest.mark.skipif(not _has_fastapi, reason="fastapi not inst
 @_skip_no_fastapi
 class TestAPIRouterImports:
     """Verify all route modules are importable."""
+
     def test_import_health(self):
         from api.routes.health import router
+
         assert router is not None
 
     def test_import_providers(self):
         from api.routes.providers import router
+
         assert router is not None
 
     def test_import_geographic(self):
         from api.routes.geographic import router
+
         assert router is not None
 
     def test_import_national(self):
         from api.routes.national import router
+
         assert router is not None
 
     def test_import_opioid(self):
         from api.routes.opioid import router
+
         assert router is not None
 
     def test_import_specialties(self):
         from api.routes.specialties import router
+
         assert router is not None
 
     def test_import_catalog(self):
         from api.routes.catalog import router
+
         assert router is not None
 
     def test_import_main_app(self):
         from api.main import app
+
         assert app is not None
         # Check routes registered
         route_paths = [r.path for r in app.routes]
@@ -205,6 +216,7 @@ class TestAPIRouterImports:
 @_skip_no_fastapi
 class TestAPIAppRoutes:
     """Test that all expected routes are registered on the FastAPI app."""
+
     def test_all_route_prefixes(self):
         from api.main import app
 

@@ -41,8 +41,15 @@ COLUMN_MAPPING = {
 }
 
 STAGING_COLUMNS = [
-    "ccn", "facility_name", "provider_state", "measure_id",
-    "measure_name", "score", "national_average", "patient_count", "star_rating",
+    "ccn",
+    "facility_name",
+    "provider_state",
+    "measure_id",
+    "measure_name",
+    "score",
+    "national_average",
+    "patient_count",
+    "star_rating",
 ]
 
 

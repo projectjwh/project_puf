@@ -43,8 +43,15 @@ COLUMN_MAPPING = {
 }
 
 STAGING_COLUMNS = [
-    "ccn", "facility_name", "measure_id", "measure_name",
-    "score", "sample_size", "footnote", "start_date", "end_date",
+    "ccn",
+    "facility_name",
+    "measure_id",
+    "measure_name",
+    "score",
+    "sample_size",
+    "footnote",
+    "start_date",
+    "end_date",
 ]
 
 

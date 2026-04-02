@@ -5,16 +5,17 @@ reference data sources. Individual source modules define their specific
 column mappings, validation rules, and transforms.
 """
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 import pandas as pd
 
 from pipelines._common.acquire import compute_hash, download_file, extract_zip, resolve_landing_path
-from pipelines._common.config import PROJECT_ROOT, get_source
-from pipelines._common.db import copy_dataframe_to_pg, get_pg_engine
+from pipelines._common.config import get_source
+from pipelines._common.db import copy_dataframe_to_pg
 from pipelines._common.logging import get_logger
 from pipelines._common.validate import ValidationReport, check_required_columns, check_row_count
 
@@ -59,13 +60,21 @@ def read_source_file(path: Path, config: ReferenceSourceConfig) -> pd.DataFrame:
     opts = config.read_options
 
     if suffix == ".csv":
-        return pd.read_csv(path, dtype=str, encoding=opts.get("encoding", "utf-8"),
-                           sep=opts.get("sep", ","), **{k: v for k, v in opts.items()
-                           if k not in ("encoding", "sep")})
+        return pd.read_csv(
+            path,
+            dtype=str,
+            encoding=opts.get("encoding", "utf-8"),
+            sep=opts.get("sep", ","),
+            **{k: v for k, v in opts.items() if k not in ("encoding", "sep")},
+        )
     elif suffix == ".tsv" or suffix == ".txt":
-        return pd.read_csv(path, dtype=str, sep=opts.get("sep", "\t"),
-                           encoding=opts.get("encoding", "utf-8"),
-                           **{k: v for k, v in opts.items() if k not in ("encoding", "sep")})
+        return pd.read_csv(
+            path,
+            dtype=str,
+            sep=opts.get("sep", "\t"),
+            encoding=opts.get("encoding", "utf-8"),
+            **{k: v for k, v in opts.items() if k not in ("encoding", "sep")},
+        )
     elif suffix in (".xlsx", ".xls"):
         sheet = opts.get("sheet_name", 0)
         header = opts.get("header", 0)
@@ -81,9 +90,7 @@ def find_data_file(landing_path: Path, config: ReferenceSourceConfig) -> Path:
         # Try recursively
         matches = list(landing_path.rglob(config.file_pattern))
     if not matches:
-        raise FileNotFoundError(
-            f"No files matching '{config.file_pattern}' in {landing_path}"
-        )
+        raise FileNotFoundError(f"No files matching '{config.file_pattern}' in {landing_path}")
     # Return the largest file (likely the main data file)
     return max(matches, key=lambda p: p.stat().st_size)
 
@@ -178,6 +185,7 @@ def run_reference_pipeline(
         # Type casting
         if config.type_map:
             from pipelines._common.transform import cast_types
+
             df = cast_types(df, config.type_map)
 
         # Custom transform
@@ -190,14 +198,16 @@ def run_reference_pipeline(
         log.info("transform_complete", rows=len(df), columns=list(df.columns))
 
         # 5. Load to PostgreSQL
-        rows_loaded = copy_dataframe_to_pg(
-            df, config.target_table, config.target_schema, if_exists="replace"
-        )
+        rows_loaded = copy_dataframe_to_pg(df, config.target_table, config.target_schema, if_exists="replace")
 
         duration = time.time() - start_time
         complete_pipeline_run(
-            run_id, "success", rows_processed=len(df),
-            rows_loaded=rows_loaded, file_hash=file_hash, duration_seconds=duration,
+            run_id,
+            "success",
+            rows_processed=len(df),
+            rows_loaded=rows_loaded,
+            file_hash=file_hash,
+            duration_seconds=duration,
         )
         update_data_freshness(config.source_name, file_hash=file_hash)
 
@@ -211,7 +221,6 @@ def run_reference_pipeline(
 
     except Exception as e:
         duration = time.time() - start_time
-        complete_pipeline_run(run_id, "failed", error_message=str(e),
-                              duration_seconds=duration)
+        complete_pipeline_run(run_id, "failed", error_message=str(e), duration_seconds=duration)
         record_pipeline_failure(run_id, e)
         raise

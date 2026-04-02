@@ -6,15 +6,16 @@ Revision ID: 007
 Revises: 006
 Create Date: 2026-03-04
 """
-from typing import Sequence, Union
+
+from collections.abc import Sequence
 
 import sqlalchemy as sa
 from alembic import op
 
 revision: str = "007"
-down_revision: Union[str, None] = "006"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = "006"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
@@ -42,12 +43,16 @@ def upgrade() -> None:
         schema="reference",
     )
     op.create_primary_key(
-        "pk_ref_rvu", "ref_rvu_fee_schedule",
-        ["hcpcs_code", "modifier", "calendar_year"], schema="reference",
+        "pk_ref_rvu",
+        "ref_rvu_fee_schedule",
+        ["hcpcs_code", "modifier", "calendar_year"],
+        schema="reference",
     )
     op.create_index(
-        "ix_ref_rvu_hcpcs_year", "ref_rvu_fee_schedule",
-        ["hcpcs_code", "calendar_year"], schema="reference",
+        "ix_ref_rvu_hcpcs_year",
+        "ref_rvu_fee_schedule",
+        ["hcpcs_code", "calendar_year"],
+        schema="reference",
     )
 
     # ref_wage_index — ~4,000 rows per year
@@ -67,11 +72,15 @@ def upgrade() -> None:
         schema="reference",
     )
     op.create_primary_key(
-        "pk_ref_wage_index", "ref_wage_index",
-        ["cbsa_code", "fiscal_year"], schema="reference",
+        "pk_ref_wage_index",
+        "ref_wage_index",
+        ["cbsa_code", "fiscal_year"],
+        schema="reference",
     )
     op.create_index(
-        "ix_ref_wage_index_state", "ref_wage_index", ["state_fips"],
+        "ix_ref_wage_index_state",
+        "ref_wage_index",
+        ["state_fips"],
         schema="reference",
     )
 
@@ -91,8 +100,10 @@ def upgrade() -> None:
         schema="reference",
     )
     op.create_primary_key(
-        "pk_ref_ipps_rates", "ref_ipps_rates",
-        ["drg_code", "fiscal_year"], schema="reference",
+        "pk_ref_ipps_rates",
+        "ref_ipps_rates",
+        ["drg_code", "fiscal_year"],
+        schema="reference",
     )
 
 

@@ -44,9 +44,15 @@ COLUMN_MAPPING = {
 }
 
 OUTPUT_COLUMNS = [
-    "fips_code", "year", "state_fips", "county_fips",
-    "state_name", "county_name",
-    "total_population", "population_65_plus", "population_under_18",
+    "fips_code",
+    "year",
+    "state_fips",
+    "county_fips",
+    "state_name",
+    "county_name",
+    "total_population",
+    "population_65_plus",
+    "population_under_18",
 ]
 
 

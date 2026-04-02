@@ -1,13 +1,9 @@
 """Tests for pipelines._common.config."""
 
-from pathlib import Path
-
 from pipelines._common.config import (
     DatabaseSettings,
     PipelineSettings,
     SourceDefinition,
-    get_database_settings,
-    get_pipeline_settings,
     get_sources,
 )
 

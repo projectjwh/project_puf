@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 class StateSpending(BaseModel):
     """State-level spending variation."""
+
     state_fips: str
     state_name: str | None = None
     state_abbreviation: str | None = None
@@ -34,6 +35,7 @@ class StateSpending(BaseModel):
 
 class StateSummary(BaseModel):
     """Lightweight state summary for maps/dropdowns."""
+
     state_fips: str
     state_name: str | None = None
     state_abbreviation: str | None = None

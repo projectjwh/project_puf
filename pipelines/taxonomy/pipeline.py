@@ -21,9 +21,7 @@ def _transform_taxonomy(df: pd.DataFrame) -> pd.DataFrame:
 
     # Individual vs. organization heuristic based on grouping
     org_groups = {"agencies", "suppliers", "group", "hospital", "laboratory", "pharmacy", "facility"}
-    df["is_individual"] = ~df["grouping"].fillna("").str.lower().apply(
-        lambda g: any(k in g for k in org_groups)
-    )
+    df["is_individual"] = ~df["grouping"].fillna("").str.lower().apply(lambda g: any(k in g for k in org_groups))
     return df
 
 
@@ -39,8 +37,13 @@ config = ReferenceSourceConfig(
     },
     required_source_columns=["Code", "Classification"],
     select_columns=[
-        "taxonomy_code", "grouping", "classification", "specialization",
-        "definition", "display_name", "is_individual",
+        "taxonomy_code",
+        "grouping",
+        "classification",
+        "specialization",
+        "definition",
+        "display_name",
+        "is_individual",
     ],
     min_rows=800,
     max_rows=1500,

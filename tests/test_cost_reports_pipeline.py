@@ -12,26 +12,30 @@ from pipelines.cost_reports.pipeline import (
 
 @pytest.fixture
 def rpt_df():
-    return pd.DataFrame({
-        "rpt_rec_num": ["100001", "100002"],
-        "ccn": ["50001", "330001"],
-        "report_status_code": ["1", "1"],
-        "fiscal_year_begin": ["10/01/2021", "10/01/2021"],
-        "fiscal_year_end": ["09/30/2022", "09/30/2022"],
-        "last_report": ["Y", "Y"],
-    })
+    return pd.DataFrame(
+        {
+            "rpt_rec_num": ["100001", "100002"],
+            "ccn": ["50001", "330001"],
+            "report_status_code": ["1", "1"],
+            "fiscal_year_begin": ["10/01/2021", "10/01/2021"],
+            "fiscal_year_end": ["09/30/2022", "09/30/2022"],
+            "last_report": ["Y", "Y"],
+        }
+    )
 
 
 @pytest.fixture
 def nmrc_df():
     """Simulated NMRC data with worksheet/line/column values."""
-    return pd.DataFrame({
-        "RPT_REC_NUM": ["100001", "100001", "100001", "100001"],
-        "WKSHT_CD": ["S300001", "S300001", "S300001", "S300001"],
-        "LINE_NUM": ["0010", "0010", "0020", "0030"],
-        "CLMN_NUM": ["0010", "0020", "0010", "0010"],
-        "ITM_VAL_NUM": ["50000000", "55000000", "48000000", "7000000"],
-    })
+    return pd.DataFrame(
+        {
+            "RPT_REC_NUM": ["100001", "100001", "100001", "100001"],
+            "WKSHT_CD": ["S300001", "S300001", "S300001", "S300001"],
+            "LINE_NUM": ["0010", "0010", "0020", "0030"],
+            "CLMN_NUM": ["0010", "0020", "0010", "0010"],
+            "ITM_VAL_NUM": ["50000000", "55000000", "48000000", "7000000"],
+        }
+    )
 
 
 class TestTransformCostReports:

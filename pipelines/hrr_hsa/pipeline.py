@@ -48,8 +48,13 @@ COLUMN_MAPPING = {
 }
 
 OUTPUT_COLUMNS = [
-    "zip_code", "hrr_number", "hrr_city", "hrr_state",
-    "hsa_number", "hsa_city", "hsa_state",
+    "zip_code",
+    "hrr_number",
+    "hrr_city",
+    "hrr_state",
+    "hsa_number",
+    "hsa_city",
+    "hsa_state",
 ]
 
 

@@ -5,7 +5,6 @@ schema mapping, and snapshot metadata injection.
 """
 
 from datetime import date
-from typing import Any
 
 import pandas as pd
 
@@ -17,6 +16,7 @@ log = get_logger(stage="transform")
 # ---------------------------------------------------------------------------
 # NPI normalization
 # ---------------------------------------------------------------------------
+
 
 def normalize_npi(series: pd.Series) -> pd.Series:
     """Validate and zero-pad NPI values to 10 digits.
@@ -40,6 +40,7 @@ def normalize_npi(series: pd.Series) -> pd.Series:
 # FIPS normalization
 # ---------------------------------------------------------------------------
 
+
 def normalize_fips_state(series: pd.Series) -> pd.Series:
     """Zero-pad state FIPS codes to 2 digits. E.g., '6' → '06'."""
     return series.astype(str).str.strip().str.zfill(2)
@@ -58,6 +59,7 @@ def extract_zip5(series: pd.Series) -> pd.Series:
 # ---------------------------------------------------------------------------
 # NDC normalization
 # ---------------------------------------------------------------------------
+
 
 def normalize_ndc_to_11(ndc: str) -> str:
     """Convert a 10-digit NDC (various formats) to 11-digit (5-4-2).
@@ -91,6 +93,7 @@ def normalize_ndc_series(series: pd.Series) -> pd.Series:
 # Column renaming and type casting
 # ---------------------------------------------------------------------------
 
+
 def rename_columns(df: pd.DataFrame, mapping: dict[str, str]) -> pd.DataFrame:
     """Rename DataFrame columns using a mapping dict.
 
@@ -108,7 +111,6 @@ def apply_schema_mapping(df: pd.DataFrame, source: str, data_year: int | None = 
 
     Mappings are stored in config/schema_mappings/{source}.yaml (created per source).
     """
-    from pathlib import Path
     import yaml
 
     from pipelines._common.config import CONFIG_DIR
@@ -148,13 +150,16 @@ def cast_types(df: pd.DataFrame, type_map: dict[str, str]) -> pd.DataFrame:
         elif dtype == "date":
             df[col] = pd.to_datetime(df[col], errors="coerce").dt.date
         elif dtype == "bool":
-            df[col] = df[col].map({"Y": True, "N": False, "y": True, "n": False, "1": True, "0": False, True: True, False: False})
+            df[col] = df[col].map(
+                {"Y": True, "N": False, "y": True, "n": False, "1": True, "0": False, True: True, False: False}
+            )
     return df
 
 
 # ---------------------------------------------------------------------------
 # Snapshot metadata
 # ---------------------------------------------------------------------------
+
 
 def add_snapshot_metadata(df: pd.DataFrame, source: str, run_date: date | None = None) -> pd.DataFrame:
     """Add _loaded_at and _source columns to a DataFrame."""
@@ -173,6 +178,7 @@ def add_data_year(df: pd.DataFrame, data_year: int) -> pd.DataFrame:
 # ---------------------------------------------------------------------------
 # Common cleaning
 # ---------------------------------------------------------------------------
+
 
 def clean_string_columns(df: pd.DataFrame, columns: list[str] | None = None) -> pd.DataFrame:
     """Strip whitespace and uppercase string columns.

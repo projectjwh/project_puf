@@ -40,8 +40,13 @@ COLUMN_MAPPING = {
 }
 
 OUTPUT_COLUMNS = [
-    "apc_code", "apc_description", "payment_rate", "relative_weight",
-    "minimum_unadjusted_copayment", "status_indicator", "effective_year",
+    "apc_code",
+    "apc_description",
+    "payment_rate",
+    "relative_weight",
+    "minimum_unadjusted_copayment",
+    "status_indicator",
+    "effective_year",
 ]
 
 

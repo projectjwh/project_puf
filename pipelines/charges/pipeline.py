@@ -53,10 +53,19 @@ COLUMN_MAPPING = {
 }
 
 STAGING_COLUMNS = [
-    "ccn", "facility_name", "provider_state", "provider_state_fips",
-    "drg_code", "drg_description", "total_discharges",
-    "avg_covered_charges", "avg_total_payments", "avg_medicare_payments",
-    "total_covered_charges", "total_payments", "total_medicare_payments",
+    "ccn",
+    "facility_name",
+    "provider_state",
+    "provider_state_fips",
+    "drg_code",
+    "drg_description",
+    "total_discharges",
+    "avg_covered_charges",
+    "avg_total_payments",
+    "avg_medicare_payments",
+    "total_covered_charges",
+    "total_payments",
+    "total_medicare_payments",
     "data_year",
 ]
 
@@ -130,9 +139,7 @@ def run(
     report.raise_if_blocked()
     df = transform_charges(df, data_year)
 
-    parquet_path = (
-        PROJECT_ROOT / settings.storage.processed_base / "charges" / str(data_year) / "charges.parquet"
-    )
+    parquet_path = PROJECT_ROOT / settings.storage.processed_base / "charges" / str(data_year) / "charges.parquet"
     write_parquet(df, parquet_path)
     results["charges_parquet"] = len(df)
 

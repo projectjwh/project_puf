@@ -1,7 +1,6 @@
 """Tests for pipelines._common.acquire."""
 
 from datetime import date
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import httpx
@@ -92,6 +91,7 @@ class TestExtractZip:
 # Phase 2: Retry and ETag tests
 # ---------------------------------------------------------------------------
 
+
 class TestIsRetryableError:
     def test_connect_error_is_retryable(self):
         assert _is_retryable_error(httpx.ConnectError("connection refused")) is True
@@ -132,6 +132,7 @@ class TestDownloadFileRetry:
     @patch("pipelines._common.acquire.get_pipeline_settings")
     def test_succeeds_on_first_attempt(self, mock_settings, mock_download, tmp_path):
         from pipelines._common.config import PipelineSettings, RetryConfig
+
         mock_settings.return_value = PipelineSettings(retry=RetryConfig(max_attempts=3, delay_seconds=[1]))
         mock_download.return_value = 1000
 
@@ -143,6 +144,7 @@ class TestDownloadFileRetry:
     @patch("pipelines._common.acquire.get_pipeline_settings")
     def test_retries_on_connect_error_then_succeeds(self, mock_settings, mock_download, tmp_path):
         from pipelines._common.config import PipelineSettings, RetryConfig
+
         mock_settings.return_value = PipelineSettings(retry=RetryConfig(max_attempts=3, delay_seconds=[0]))
         mock_download.side_effect = [httpx.ConnectError("refused"), 1000]
 
@@ -154,6 +156,7 @@ class TestDownloadFileRetry:
     @patch("pipelines._common.acquire.get_pipeline_settings")
     def test_does_not_retry_404(self, mock_settings, mock_download, tmp_path):
         from pipelines._common.config import PipelineSettings, RetryConfig
+
         mock_settings.return_value = PipelineSettings(retry=RetryConfig(max_attempts=3, delay_seconds=[0]))
         mock_response = MagicMock()
         mock_response.status_code = 404
@@ -167,6 +170,7 @@ class TestDownloadFileRetry:
     @patch("pipelines._common.acquire.get_pipeline_settings")
     def test_exhausts_retries(self, mock_settings, mock_download, tmp_path):
         from pipelines._common.config import PipelineSettings, RetryConfig
+
         mock_settings.return_value = PipelineSettings(retry=RetryConfig(max_attempts=2, delay_seconds=[0]))
         mock_download.side_effect = httpx.ConnectError("refused")
 
@@ -201,10 +205,12 @@ class TestCheckRemoteFreshness:
         mock_response.raise_for_status = MagicMock()
         mock_head.return_value = mock_response
 
-        mock_query.return_value = pd.DataFrame({
-            "latest_etag": ["abc123"],
-            "latest_last_modified": [""],
-        })
+        mock_query.return_value = pd.DataFrame(
+            {
+                "latest_etag": ["abc123"],
+                "latest_last_modified": [""],
+            }
+        )
 
         assert check_remote_freshness("http://example.com/data.csv", "partb") is False
 
@@ -218,10 +224,12 @@ class TestCheckRemoteFreshness:
         mock_response.raise_for_status = MagicMock()
         mock_head.return_value = mock_response
 
-        mock_query.return_value = pd.DataFrame({
-            "latest_etag": ["old123"],
-            "latest_last_modified": [""],
-        })
+        mock_query.return_value = pd.DataFrame(
+            {
+                "latest_etag": ["old123"],
+                "latest_last_modified": [""],
+            }
+        )
 
         assert check_remote_freshness("http://example.com/data.csv", "partb") is True
 

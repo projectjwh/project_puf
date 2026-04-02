@@ -8,7 +8,7 @@ import pandas as pd
 
 from pipelines._common.logging import get_logger
 from pipelines._common.reference import ReferenceSourceConfig, run_reference_pipeline
-from pipelines._common.transform import normalize_fips_county, normalize_fips_state
+from pipelines._common.transform import normalize_fips_county
 
 log = get_logger(source="zip_county")
 
@@ -41,8 +41,14 @@ config = ReferenceSourceConfig(
     },
     required_source_columns=["ZIP", "COUNTY"],
     select_columns=[
-        "zip_code", "county_fips", "state_fips", "state_abbreviation",
-        "residential_ratio", "business_ratio", "other_ratio", "total_ratio",
+        "zip_code",
+        "county_fips",
+        "state_fips",
+        "state_abbreviation",
+        "residential_ratio",
+        "business_ratio",
+        "other_ratio",
+        "total_ratio",
     ],
     min_rows=40_000,
     max_rows=60_000,

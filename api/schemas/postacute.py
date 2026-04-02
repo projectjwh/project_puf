@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 class SNFQuality(BaseModel):
     """Skilled Nursing Facility quality summary."""
+
     ccn: str
     facility_name: str | None = None
     provider_state: str | None = None
@@ -24,6 +25,7 @@ class SNFQuality(BaseModel):
 
 class HHAQuality(BaseModel):
     """Home Health Agency quality summary."""
+
     ccn: str
     facility_name: str | None = None
     provider_state: str | None = None
@@ -39,6 +41,7 @@ class HHAQuality(BaseModel):
 
 class HospiceQuality(BaseModel):
     """Hospice quality summary."""
+
     ccn: str
     facility_name: str | None = None
     provider_state: str | None = None

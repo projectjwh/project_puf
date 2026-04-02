@@ -17,7 +17,7 @@ from tenacity import (
     wait_fixed,
 )
 
-from pipelines._common.config import PROJECT_ROOT, SourceDefinition, get_pipeline_settings, get_source
+from pipelines._common.config import PROJECT_ROOT, get_pipeline_settings, get_source
 from pipelines._common.logging import get_logger
 
 log = get_logger(stage="acquire")
@@ -40,10 +40,7 @@ def resolve_landing_path(source: str, run_date: date | None = None, data_year: i
     settings = get_pipeline_settings()
     run_date = run_date or date.today()
 
-    if data_year:
-        partition = str(data_year)
-    else:
-        partition = run_date.isoformat()
+    partition = str(data_year) if data_year else run_date.isoformat()
 
     path = PROJECT_ROOT / settings.storage.raw_base / source / partition
     path.mkdir(parents=True, exist_ok=True)
@@ -111,12 +108,10 @@ def download_file(
 
     dest_path = dest_dir / filename
 
-    log.info("download_start", url=url, dest=str(dest_path),
-             max_attempts=retry_config.max_attempts)
+    log.info("download_start", url=url, dest=str(dest_path), max_attempts=retry_config.max_attempts)
 
     # Build retry-wrapped download with configured delays
     delays = retry_config.delay_seconds
-    attempt_count = 0
 
     retrying_download = retry(
         retry=retry_if_exception(_is_retryable_error),
@@ -160,8 +155,7 @@ def validate_file_size(path: Path, min_bytes: int, max_bytes: int) -> None:
     size = path.stat().st_size
     if size < min_bytes or size > max_bytes:
         raise ValueError(
-            f"File size {size:,} bytes outside expected range "
-            f"[{min_bytes:,}, {max_bytes:,}] for {path.name}"
+            f"File size {size:,} bytes outside expected range [{min_bytes:,}, {max_bytes:,}] for {path.name}"
         )
     log.info("size_validated", path=str(path), size_bytes=size)
 
@@ -283,7 +277,7 @@ def check_hash_changed(
         )
         if result.empty:
             return True  # No previous record — data is new
-        return result.iloc[0]["latest_file_hash"] != current_hash
+        return bool(result.iloc[0]["latest_file_hash"] != current_hash)
     except Exception:
         # Table doesn't exist yet or other DB error — assume new data
         return True

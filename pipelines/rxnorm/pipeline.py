@@ -31,14 +31,40 @@ log = get_logger(source="rxnorm")
 
 # RXNCONSO.RRF columns (pipe-delimited, no header)
 RXNCONSO_COLUMNS = [
-    "rxcui", "lat", "ts", "lui", "stt", "sui", "ispref", "rxaui",
-    "saui", "scui", "sdui", "sab", "tty", "code", "str_name", "srl",
-    "suppress", "cvf",
+    "rxcui",
+    "lat",
+    "ts",
+    "lui",
+    "stt",
+    "sui",
+    "ispref",
+    "rxaui",
+    "saui",
+    "scui",
+    "sdui",
+    "sab",
+    "tty",
+    "code",
+    "str_name",
+    "srl",
+    "suppress",
+    "cvf",
 ]
 
 RXNSAT_COLUMNS = [
-    "rxcui", "lui", "sui", "rxaui", "stype", "code", "atui",
-    "satui", "atn", "sab", "atv", "suppress", "cvf",
+    "rxcui",
+    "lui",
+    "sui",
+    "rxaui",
+    "stype",
+    "code",
+    "atui",
+    "satui",
+    "atn",
+    "sab",
+    "atv",
+    "suppress",
+    "cvf",
 ]
 
 
@@ -53,7 +79,10 @@ def validate_rxnorm(df: pd.DataFrame) -> ValidationReport:
 def read_rrf(filepath: Path, columns: list[str]) -> pd.DataFrame:
     """Read an RRF pipe-delimited file (no header, trailing pipe)."""
     df = pd.read_csv(
-        filepath, sep="|", header=None, dtype=str,
+        filepath,
+        sep="|",
+        header=None,
+        dtype=str,
         names=columns + ["_trailing"],  # RRF has trailing pipe
         low_memory=False,
     )

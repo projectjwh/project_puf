@@ -68,17 +68,29 @@ COLUMN_MAPPING = {
 
 # Columns to load to staging (after transform)
 STAGING_COLUMNS = [
-    "rendering_npi", "rendering_npi_name", "entity_type",
-    "hcpcs_code", "hcpcs_description", "hcpcs_drug_indicator",
+    "rendering_npi",
+    "rendering_npi_name",
+    "entity_type",
+    "hcpcs_code",
+    "hcpcs_description",
+    "hcpcs_drug_indicator",
     "place_of_service",
-    "number_of_services", "number_of_beneficiaries",
+    "number_of_services",
+    "number_of_beneficiaries",
     "number_of_distinct_beneficiaries_per_day",
-    "avg_submitted_charge", "avg_medicare_allowed",
-    "avg_medicare_payment", "avg_medicare_standardized",
-    "total_submitted_charge", "total_medicare_allowed",
-    "total_medicare_payment", "total_medicare_standardized",
-    "provider_type", "medicare_participation",
-    "provider_state", "provider_zip5", "provider_state_fips",
+    "avg_submitted_charge",
+    "avg_medicare_allowed",
+    "avg_medicare_payment",
+    "avg_medicare_standardized",
+    "total_submitted_charge",
+    "total_medicare_allowed",
+    "total_medicare_payment",
+    "total_medicare_standardized",
+    "provider_type",
+    "medicare_participation",
+    "provider_state",
+    "provider_zip5",
+    "provider_state_fips",
     "data_year",
 ]
 
@@ -111,16 +123,20 @@ def transform_partb(df: pd.DataFrame, data_year: int) -> pd.DataFrame:
 
     # State FIPS derivation
     from pipelines.nppes.pipeline import STATE_ABBREV_TO_FIPS
+
     if "provider_state" in df.columns:
         df["provider_state"] = df["provider_state"].astype(str).str.strip().str.upper()
         df["provider_state_fips"] = df["provider_state"].map(STATE_ABBREV_TO_FIPS)
 
     # Cast numeric columns
     numeric_cols = [
-        "number_of_services", "number_of_beneficiaries",
+        "number_of_services",
+        "number_of_beneficiaries",
         "number_of_distinct_beneficiaries_per_day",
-        "avg_submitted_charge", "avg_medicare_allowed",
-        "avg_medicare_payment", "avg_medicare_standardized",
+        "avg_submitted_charge",
+        "avg_medicare_allowed",
+        "avg_medicare_payment",
+        "avg_medicare_standardized",
     ]
     for col in numeric_cols:
         if col in df.columns:
@@ -140,9 +156,8 @@ def transform_partb(df: pd.DataFrame, data_year: int) -> pd.DataFrame:
 
     # Round dollar amounts
     for col in df.columns:
-        if col.startswith("total_") or col.startswith("avg_"):
-            if col in df.columns and df[col].dtype in ("float64", "Float64"):
-                df[col] = df[col].round(2)
+        if (col.startswith("total_") or col.startswith("avg_")) and df[col].dtype in ("float64", "Float64"):
+            df[col] = df[col].round(2)
 
     # Integer columns
     for col in ("number_of_beneficiaries", "number_of_distinct_beneficiaries_per_day"):
@@ -189,6 +204,7 @@ def run(
             landing = resolve_landing_path("partb", run_date, data_year)
             downloaded = download_file(source_def.url, landing)
             from pipelines._common.acquire import compute_hash
+
             file_hash = compute_hash(downloaded)
             if downloaded.suffix == ".zip":
                 extract_zip(downloaded, landing)
@@ -220,8 +236,7 @@ def run(
 
         # Write Parquet
         parquet_path = (
-            PROJECT_ROOT / settings.storage.processed_base
-            / "partb" / str(data_year) / "part_b_utilization.parquet"
+            PROJECT_ROOT / settings.storage.processed_base / "partb" / str(data_year) / "part_b_utilization.parquet"
         )
         write_parquet(df, parquet_path)
         results["partb_parquet"] = len(df)
@@ -229,14 +244,21 @@ def run(
         # Load to staging (PostgreSQL)
         out_cols = [c for c in STAGING_COLUMNS if c in df.columns]
         rows = copy_dataframe_to_pg(
-            df[out_cols], "stg_cms__part_b_utilization", "staging", if_exists="append",
+            df[out_cols],
+            "stg_cms__part_b_utilization",
+            "staging",
+            if_exists="append",
         )
         results["stg_part_b"] = rows
 
         duration = time.time() - start_time
         complete_pipeline_run(
-            run_id, "success", rows_processed=results.get("partb_rows", 0),
-            rows_loaded=rows, file_hash=file_hash, duration_seconds=duration,
+            run_id,
+            "success",
+            rows_processed=results.get("partb_rows", 0),
+            rows_loaded=rows,
+            file_hash=file_hash,
+            duration_seconds=duration,
         )
         update_data_freshness("partb", data_year, file_hash)
 
@@ -245,7 +267,6 @@ def run(
 
     except Exception as e:
         duration = time.time() - start_time
-        complete_pipeline_run(run_id, "failed", error_message=str(e),
-                              duration_seconds=duration)
+        complete_pipeline_run(run_id, "failed", error_message=str(e), duration_seconds=duration)
         record_pipeline_failure(run_id, e)
         raise

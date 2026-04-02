@@ -1,5 +1,7 @@
 """Tests for NPPES pipeline transforms and validation."""
 
+from datetime import date
+
 import pandas as pd
 import pytest
 
@@ -9,30 +11,31 @@ from pipelines.nppes.pipeline import (
     transform_nppes,
     validate_nppes,
 )
-from datetime import date
 
 
 @pytest.fixture
 def raw_nppes_df():
     """Minimal NPPES-like DataFrame after column rename."""
-    return pd.DataFrame({
-        "npi": ["1234567890", "0987654321", "1111111111"],
-        "entity_type_code": ["1", "2", "1"],
-        "provider_last_name": ["  smith  ", "ACME CORP", "  doe  "],
-        "provider_first_name": ["  john  ", None, "  jane  "],
-        "provider_credential": ["  MD  ", None, "  NP  "],
-        "provider_organization_name": [None, "ACME HEALTH SYSTEM", None],
-        "provider_gender_code": ["M", None, "F"],
-        "practice_state": ["CA", "NY", "TX"],
-        "practice_zip_full": ["90210-1234", "10001", "73301-0000"],
-        "taxonomy_code_1": ["207Q00000X", "282N00000X", "363L00000X"],
-        "taxonomy_primary_switch_1": ["Y", "Y", "N"],
-        "taxonomy_code_2": [None, None, "363LP0200X"],
-        "taxonomy_primary_switch_2": [None, None, "Y"],
-        "enumeration_date": ["05/23/2005", "01/15/2010", "11/30/2018"],
-        "deactivation_date": [None, None, None],
-        "reactivation_date": [None, None, None],
-    })
+    return pd.DataFrame(
+        {
+            "npi": ["1234567890", "0987654321", "1111111111"],
+            "entity_type_code": ["1", "2", "1"],
+            "provider_last_name": ["  smith  ", "ACME CORP", "  doe  "],
+            "provider_first_name": ["  john  ", None, "  jane  "],
+            "provider_credential": ["  MD  ", None, "  NP  "],
+            "provider_organization_name": [None, "ACME HEALTH SYSTEM", None],
+            "provider_gender_code": ["M", None, "F"],
+            "practice_state": ["CA", "NY", "TX"],
+            "practice_zip_full": ["90210-1234", "10001", "73301-0000"],
+            "taxonomy_code_1": ["207Q00000X", "282N00000X", "363L00000X"],
+            "taxonomy_primary_switch_1": ["Y", "Y", "N"],
+            "taxonomy_code_2": [None, None, "363LP0200X"],
+            "taxonomy_primary_switch_2": [None, None, "Y"],
+            "enumeration_date": ["05/23/2005", "01/15/2010", "11/30/2018"],
+            "deactivation_date": [None, None, None],
+            "reactivation_date": [None, None, None],
+        }
+    )
 
 
 class TestTransformNppes:
@@ -113,10 +116,12 @@ class TestValidateNppes:
         assert len(block_failures) == 0
 
     def test_invalid_npi_blocks(self):
-        df = pd.DataFrame({
-            "npi": ["BADNPI1234", "0987654321"],
-            "entity_type_code": ["1", "2"],
-        })
+        df = pd.DataFrame(
+            {
+                "npi": ["BADNPI1234", "0987654321"],
+                "entity_type_code": ["1", "2"],
+            }
+        )
         report = validate_nppes(df)
         format_failures = [r for r in report.block_failures if "format" in r.rule_name]
         assert len(format_failures) > 0

@@ -1,7 +1,7 @@
 """Specialty endpoints — taxonomy listing, comparison."""
 
-from pydantic import BaseModel
 from fastapi import APIRouter, Query
+from pydantic import BaseModel
 
 from api.services.database import query_pg
 

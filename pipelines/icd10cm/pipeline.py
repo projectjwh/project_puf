@@ -55,9 +55,7 @@ def _transform_icd10cm(df: pd.DataFrame) -> pd.DataFrame:
     df["icd10_cm_code"] = df["icd10_cm_code"].str.strip().str.upper().str.replace(".", "", regex=False)
 
     # Formatted version with dot (e.g., E119 → E11.9)
-    df["icd10_cm_code_formatted"] = df["icd10_cm_code"].apply(
-        lambda c: c[:3] + "." + c[3:] if len(c) > 3 else c
-    )
+    df["icd10_cm_code_formatted"] = df["icd10_cm_code"].apply(lambda c: c[:3] + "." + c[3:] if len(c) > 3 else c)
 
     # Billable = codes with >= 3 characters after the category (varies by code)
     # Simplified: header codes (3-char) are non-billable; longer codes are billable
@@ -81,8 +79,13 @@ config = ReferenceSourceConfig(
     },
     required_source_columns=["code"],
     select_columns=[
-        "icd10_cm_code", "icd10_cm_code_formatted", "description_short",
-        "description_long", "chapter", "chapter_description", "is_billable",
+        "icd10_cm_code",
+        "icd10_cm_code_formatted",
+        "description_short",
+        "description_long",
+        "chapter",
+        "chapter_description",
+        "is_billable",
     ],
     min_rows=60_000,
     max_rows=100_000,

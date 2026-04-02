@@ -164,6 +164,7 @@ class TestCheckRowCountDelta:
 # Phase 2: Persistence and quarantine features
 # ---------------------------------------------------------------------------
 
+
 class TestValidationReportPersistence:
     def test_run_id_defaults_to_none(self):
         report = ValidationReport(source="test")

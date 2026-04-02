@@ -30,11 +30,20 @@ from pipelines.cost_reports.pipeline import (
 log = get_logger(source="cost_reports_hospice")
 
 STAGING_COLUMNS = [
-    "rpt_rec_num", "ccn", "report_status_code",
-    "fiscal_year_begin", "fiscal_year_end",
-    "total_patient_revenue", "total_operating_expenses", "net_income",
-    "total_beds_available", "total_patient_days", "total_discharges",
-    "operating_margin", "cost_to_charge_ratio", "data_year",
+    "rpt_rec_num",
+    "ccn",
+    "report_status_code",
+    "fiscal_year_begin",
+    "fiscal_year_end",
+    "total_patient_revenue",
+    "total_operating_expenses",
+    "net_income",
+    "total_beds_available",
+    "total_patient_days",
+    "total_discharges",
+    "operating_margin",
+    "cost_to_charge_ratio",
+    "data_year",
 ]
 
 
@@ -87,8 +96,11 @@ def run(
         rpt_df = extract_financial_metrics(rpt_df, nmrc_df)
 
     parquet_path = (
-        PROJECT_ROOT / settings.storage.processed_base
-        / "cost_reports_hospice" / str(data_year) / "cost_reports_hospice.parquet"
+        PROJECT_ROOT
+        / settings.storage.processed_base
+        / "cost_reports_hospice"
+        / str(data_year)
+        / "cost_reports_hospice.parquet"
     )
     write_parquet(rpt_df, parquet_path)
     results["cost_reports_hospice_parquet"] = len(rpt_df)

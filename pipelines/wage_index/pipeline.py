@@ -20,8 +20,11 @@ def _transform_wage_index(df: pd.DataFrame) -> pd.DataFrame:
         df["state_fips"] = df["state_fips"].str.strip().str.zfill(2)
 
     numeric_cols = [
-        "wage_index", "reclassified_wage_index",
-        "gpci_work", "gpci_pe", "gpci_mp",
+        "wage_index",
+        "reclassified_wage_index",
+        "gpci_work",
+        "gpci_pe",
+        "gpci_mp",
     ]
     for col in numeric_cols:
         if col in df.columns:
@@ -49,8 +52,14 @@ config = ReferenceSourceConfig(
     },
     required_source_columns=[],  # Column names vary by year
     select_columns=[
-        "cbsa_code", "cbsa_name", "state_fips", "wage_index",
-        "reclassified_wage_index", "gpci_work", "gpci_pe", "gpci_mp",
+        "cbsa_code",
+        "cbsa_name",
+        "state_fips",
+        "wage_index",
+        "reclassified_wage_index",
+        "gpci_work",
+        "gpci_pe",
+        "gpci_mp",
     ],
     min_rows=3_000,
     max_rows=5_000,

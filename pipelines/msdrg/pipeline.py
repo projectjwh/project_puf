@@ -17,9 +17,20 @@ def _transform_msdrg(df: pd.DataFrame) -> pd.DataFrame:
     df["drg_code"] = df["drg_code"].str.strip().str.zfill(3)
 
     # DRG type heuristic: surgical DRGs typically have keywords
-    surgical_keywords = ["surgery", "surgical", "procedure", "implant", "graft",
-                         "transplant", "amputation", "craniotomy", "hip replacement",
-                         "knee replacement", "appendectomy", "cholecystectomy"]
+    surgical_keywords = [
+        "surgery",
+        "surgical",
+        "procedure",
+        "implant",
+        "graft",
+        "transplant",
+        "amputation",
+        "craniotomy",
+        "hip replacement",
+        "knee replacement",
+        "appendectomy",
+        "cholecystectomy",
+    ]
     desc_lower = df["drg_description"].fillna("").str.lower()
     df["drg_type"] = "Medical"
     for kw in surgical_keywords:
@@ -47,8 +58,14 @@ config = ReferenceSourceConfig(
     },
     required_source_columns=["MS-DRG"],
     select_columns=[
-        "drg_code", "drg_description", "mdc_code", "mdc_description",
-        "drg_type", "weight", "geometric_mean_los", "arithmetic_mean_los",
+        "drg_code",
+        "drg_description",
+        "mdc_code",
+        "mdc_description",
+        "drg_type",
+        "weight",
+        "geometric_mean_los",
+        "arithmetic_mean_los",
     ],
     min_rows=700,
     max_rows=1000,

@@ -15,7 +15,6 @@ from pipelines._common.acquire import download_file, extract_zip, resolve_landin
 from pipelines._common.config import PROJECT_ROOT, get_pipeline_settings, get_source
 from pipelines._common.db import copy_dataframe_to_pg, write_parquet
 from pipelines._common.logging import get_logger
-from pipelines._common.transform import add_data_year
 from pipelines._common.validate import (
     ValidationReport,
     check_column_not_null,
@@ -31,11 +30,20 @@ from pipelines.cost_reports.pipeline import (
 log = get_logger(source="cost_reports_hha")
 
 STAGING_COLUMNS = [
-    "rpt_rec_num", "ccn", "report_status_code",
-    "fiscal_year_begin", "fiscal_year_end",
-    "total_patient_revenue", "total_operating_expenses", "net_income",
-    "total_beds_available", "total_patient_days", "total_discharges",
-    "operating_margin", "cost_to_charge_ratio", "data_year",
+    "rpt_rec_num",
+    "ccn",
+    "report_status_code",
+    "fiscal_year_begin",
+    "fiscal_year_end",
+    "total_patient_revenue",
+    "total_operating_expenses",
+    "net_income",
+    "total_beds_available",
+    "total_patient_days",
+    "total_discharges",
+    "operating_margin",
+    "cost_to_charge_ratio",
+    "data_year",
 ]
 
 
@@ -88,8 +96,11 @@ def run(
         rpt_df = extract_financial_metrics(rpt_df, nmrc_df)
 
     parquet_path = (
-        PROJECT_ROOT / settings.storage.processed_base
-        / "cost_reports_hha" / str(data_year) / "cost_reports_hha.parquet"
+        PROJECT_ROOT
+        / settings.storage.processed_base
+        / "cost_reports_hha"
+        / str(data_year)
+        / "cost_reports_hha.parquet"
     )
     write_parquet(rpt_df, parquet_path)
     results["cost_reports_hha_parquet"] = len(rpt_df)

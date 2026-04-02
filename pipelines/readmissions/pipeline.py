@@ -41,9 +41,17 @@ COLUMN_MAPPING = {
 }
 
 STAGING_COLUMNS = [
-    "ccn", "facility_name", "provider_state", "measure_id", "measure_name",
-    "denominator", "score", "lower_estimate", "upper_estimate",
-    "compared_to_national", "data_year",
+    "ccn",
+    "facility_name",
+    "provider_state",
+    "measure_id",
+    "measure_name",
+    "denominator",
+    "score",
+    "lower_estimate",
+    "upper_estimate",
+    "compared_to_national",
+    "data_year",
 ]
 
 

@@ -15,6 +15,7 @@ async def health_check() -> HealthResponse:
 
     try:
         from api.services.database import query_pg
+
         query_pg("SELECT 1")
         pg_ok = True
     except Exception:
@@ -22,6 +23,7 @@ async def health_check() -> HealthResponse:
 
     try:
         from api.services.database import query_duckdb
+
         query_duckdb("SELECT 1")
         duckdb_ok = True
     except Exception:

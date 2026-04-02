@@ -12,6 +12,7 @@ log = get_logger(source="cost_reports_flow")
 @task(name="run-cost-reports-pipeline", retries=2, retry_delay_seconds=[300, 900])
 def run_cost_reports_pipeline(run_date: date, data_year: int) -> dict[str, int]:
     from pipelines.cost_reports.pipeline import run
+
     return run(run_date=run_date, data_year=data_year)
 
 

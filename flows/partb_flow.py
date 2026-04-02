@@ -9,6 +9,7 @@ from prefect.tasks import task_input_hash
 @task(retries=2, retry_delay_seconds=300, cache_key_fn=task_input_hash)
 def run_partb_pipeline(data_year: int, run_date: date) -> dict[str, int]:
     from pipelines.partb.pipeline import run
+
     return run(run_date=run_date, data_year=data_year)
 
 

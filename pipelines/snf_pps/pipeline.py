@@ -35,7 +35,11 @@ COLUMN_MAPPING = {
 }
 
 OUTPUT_COLUMNS = [
-    "pdpm_group", "fiscal_year", "component", "rate", "case_mix_index",
+    "pdpm_group",
+    "fiscal_year",
+    "component",
+    "rate",
+    "case_mix_index",
 ]
 
 

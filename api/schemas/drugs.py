@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 class MedicaidDrugUtilization(BaseModel):
     """State-level Medicaid drug utilization."""
+
     state: str
     state_name: str | None = None
     data_year: int | None = None
@@ -19,6 +20,7 @@ class MedicaidDrugUtilization(BaseModel):
 
 class DrugPriceTrend(BaseModel):
     """ASP quarterly price trend."""
+
     hcpcs_code: str
     short_description: str | None = None
     payment_limit: float | None = None

@@ -46,4 +46,4 @@ def get_logger(source: str | None = None, stage: str | None = None, **kwargs: ob
     if stage:
         bindings["stage"] = stage
     bindings.update(kwargs)
-    return logger.bind(**bindings)
+    return logger.bind(**bindings)  # type: ignore[no-any-return]

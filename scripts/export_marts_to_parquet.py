@@ -75,10 +75,7 @@ def main() -> None:
     parser.add_argument("--tables", nargs="*", help="Specific tables to export")
     args = parser.parse_args()
 
-    if args.tables:
-        tables = [("mart", t) for t in args.tables]
-    else:
-        tables = MART_TABLES
+    tables = [("mart", t) for t in args.tables] if args.tables else MART_TABLES
 
     results = export_all(tables)
     for table, rows in results.items():

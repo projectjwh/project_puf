@@ -11,16 +11,17 @@ from __future__ import annotations
 
 import json
 import traceback
-from datetime import date, datetime
+from datetime import date
 from typing import TYPE_CHECKING
 
-import pandas as pd
 from sqlalchemy import text
 
 from pipelines._common.db import get_pg_engine
 from pipelines._common.logging import get_logger
 
 if TYPE_CHECKING:
+    import pandas as pd
+
     from pipelines._common.validate import ValidationReport
 
 log = get_logger(stage="catalog")
@@ -29,6 +30,7 @@ log = get_logger(stage="catalog")
 # ---------------------------------------------------------------------------
 # Pipeline run lifecycle
 # ---------------------------------------------------------------------------
+
 
 def _resolve_source_id(source: str) -> int | None:
     """Look up source_id from catalog.sources by short_name.
@@ -63,8 +65,9 @@ def record_pipeline_run(
     source_id = _resolve_source_id(source)
 
     if source_id is None:
-        log.warning("catalog_source_not_found", source=source,
-                     message="catalog.sources not seeded; run tracking disabled")
+        log.warning(
+            "catalog_source_not_found", source=source, message="catalog.sources not seeded; run tracking disabled"
+        )
         return -1
 
     engine = get_pg_engine(use_pgbouncer=False)
@@ -86,7 +89,7 @@ def record_pipeline_run(
                 },
             )
             conn.commit()
-            run_id = result.scalar()
+            run_id = int(result.scalar())  # type: ignore[arg-type]
             log.info("pipeline_run_started", run_id=run_id, source=source, stage=stage)
             return run_id
     except Exception as e:
@@ -136,8 +139,7 @@ def complete_pipeline_run(
                 },
             )
             conn.commit()
-            log.info("pipeline_run_completed", run_id=run_id, status=status,
-                     rows_loaded=rows_loaded)
+            log.info("pipeline_run_completed", run_id=run_id, status=status, rows_loaded=rows_loaded)
     except Exception as e:
         log.warning("complete_pipeline_run_failed", run_id=run_id, error=str(e))
 
@@ -146,14 +148,16 @@ def complete_pipeline_run(
 # Pipeline failure classification
 # ---------------------------------------------------------------------------
 
+
 def record_pipeline_failure(run_id: int, error: Exception) -> None:
     """Classify and record a pipeline failure to catalog.pipeline_failures."""
     if run_id < 0:
         return
 
+    import subprocess
+
     import httpx
     import psycopg2
-    import subprocess
 
     error_class = type(error).__name__
 
@@ -199,8 +203,7 @@ def record_pipeline_failure(run_id: int, error: Exception) -> None:
                 },
             )
             conn.commit()
-            log.info("pipeline_failure_recorded", run_id=run_id,
-                     error_type=error_type, is_retryable=is_retryable)
+            log.info("pipeline_failure_recorded", run_id=run_id, error_type=error_type, is_retryable=is_retryable)
     except Exception as e:
         log.warning("record_pipeline_failure_failed", run_id=run_id, error=str(e))
 
@@ -208,6 +211,7 @@ def record_pipeline_failure(run_id: int, error: Exception) -> None:
 # ---------------------------------------------------------------------------
 # Validation persistence
 # ---------------------------------------------------------------------------
+
 
 def persist_validation_report(report: ValidationReport, run_id: int) -> None:
     """Write all ValidationResult entries to catalog.validation_runs.
@@ -242,8 +246,7 @@ def persist_validation_report(report: ValidationReport, run_id: int) -> None:
                     },
                 )
             conn.commit()
-            log.info("validation_report_persisted", run_id=run_id,
-                     source=report.source, checks=len(report.results))
+            log.info("validation_report_persisted", run_id=run_id, source=report.source, checks=len(report.results))
     except Exception as e:
         log.warning("persist_validation_report_failed", run_id=run_id, error=str(e))
 
@@ -251,6 +254,7 @@ def persist_validation_report(report: ValidationReport, run_id: int) -> None:
 # ---------------------------------------------------------------------------
 # Quarantine
 # ---------------------------------------------------------------------------
+
 
 def write_quarantine_rows(
     df: pd.DataFrame,
@@ -271,8 +275,7 @@ def write_quarantine_rows(
     if len(bad_rows) == 0:
         return clean_df
 
-    log.info("quarantine_rows", source=source, rule=rule_name,
-             quarantined=len(bad_rows), kept=len(clean_df))
+    log.info("quarantine_rows", source=source, rule=rule_name, quarantined=len(bad_rows), kept=len(clean_df))
 
     if run_id < 0:
         return clean_df
@@ -287,7 +290,7 @@ def write_quarantine_rows(
         chunk_size = 1000
         with engine.connect() as conn:
             for start in range(0, len(bad_rows), chunk_size):
-                chunk = bad_rows.iloc[start:start + chunk_size]
+                chunk = bad_rows.iloc[start : start + chunk_size]
                 rows_json = chunk.to_json(orient="records", date_format="iso")
                 parsed = json.loads(rows_json)
 
@@ -317,6 +320,7 @@ def write_quarantine_rows(
 # ---------------------------------------------------------------------------
 # Data freshness
 # ---------------------------------------------------------------------------
+
 
 def update_data_freshness(
     source: str,
@@ -375,7 +379,8 @@ def update_data_freshness(
                     },
                 )
             conn.commit()
-            log.info("data_freshness_updated", source=source,
-                     data_year=data_year, hash=file_hash[:16] if file_hash else "")
+            log.info(
+                "data_freshness_updated", source=source, data_year=data_year, hash=file_hash[:16] if file_hash else ""
+            )
     except Exception as e:
         log.warning("update_data_freshness_failed", source=source, error=str(e))

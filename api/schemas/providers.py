@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 
 class ProviderProfile(BaseModel):
     """Full provider practice profile (from mart_provider__practice_profile)."""
+
     npi: str = Field(..., description="10-digit NPI")
     entity_type: str | None = None
     display_name: str
@@ -65,6 +66,7 @@ class ProviderProfile(BaseModel):
 
 class ProviderSummary(BaseModel):
     """Compact provider listing for search results."""
+
     npi: str
     display_name: str
     entity_type: str | None = None
@@ -78,6 +80,7 @@ class ProviderSummary(BaseModel):
 
 class ProviderSearchResponse(BaseModel):
     """Paginated provider search results."""
+
     items: list[ProviderSummary]
     total: int
     page: int

@@ -6,15 +6,16 @@ Revision ID: 004
 Revises: 003
 Create Date: 2026-03-04
 """
-from typing import Sequence, Union
+
+from collections.abc import Sequence
 
 import sqlalchemy as sa
 from alembic import op
 
 revision: str = "004"
-down_revision: Union[str, None] = "003"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = "003"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
@@ -50,9 +51,7 @@ def upgrade() -> None:
         sa.Column("run_results_json", sa.Text),  # full run results for debugging
         schema="metadata",
     )
-    op.create_index(
-        "ix_dbt_run_log_invocation", "dbt_run_log", ["invocation_id"], schema="metadata"
-    )
+    op.create_index("ix_dbt_run_log_invocation", "dbt_run_log", ["invocation_id"], schema="metadata")
 
 
 def downgrade() -> None:

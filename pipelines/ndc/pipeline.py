@@ -22,9 +22,7 @@ def _transform_ndc(df: pd.DataFrame) -> pd.DataFrame:
     if "ndc_code" in df.columns:
         df["ndc_code"] = normalize_ndc_series(df["ndc_code"])
         # Formatted with dashes: 5-4-2
-        df["ndc_formatted"] = df["ndc_code"].apply(
-            lambda c: f"{c[:5]}-{c[5:9]}-{c[9:]}" if len(str(c)) == 11 else c
-        )
+        df["ndc_formatted"] = df["ndc_code"].apply(lambda c: f"{c[:5]}-{c[5:9]}-{c[9:]}" if len(str(c)) == 11 else c)
 
     # Opioid flag heuristic: DEA schedule II/III
     df["is_opioid"] = df.get("dea_schedule", pd.Series(dtype=str)).isin(OPIOID_DEA_SCHEDULES)
@@ -56,10 +54,22 @@ config = ReferenceSourceConfig(
     },
     required_source_columns=["PRODUCTNDC", "NONPROPRIETARYNAME"],
     select_columns=[
-        "ndc_code", "ndc_formatted", "labeler_name", "brand_name", "generic_name",
-        "dosage_form", "route", "strength", "package_description", "product_type",
-        "dea_schedule", "is_opioid", "listing_date", "marketing_start_date",
-        "marketing_end_date", "is_active",
+        "ndc_code",
+        "ndc_formatted",
+        "labeler_name",
+        "brand_name",
+        "generic_name",
+        "dosage_form",
+        "route",
+        "strength",
+        "package_description",
+        "product_type",
+        "dea_schedule",
+        "is_opioid",
+        "listing_date",
+        "marketing_start_date",
+        "marketing_end_date",
+        "is_active",
     ],
     min_rows=200_000,
     max_rows=500_000,

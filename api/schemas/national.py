@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 class NationalKPI(BaseModel):
     """National KPI summary for a single year."""
+
     data_year: int
 
     # Provider counts

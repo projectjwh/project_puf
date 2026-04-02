@@ -43,11 +43,19 @@ COLUMN_MAPPING = {
 }
 
 STAGING_COLUMNS = [
-    "ccn", "facility_name", "provider_state",
-    "overall_rating", "health_inspection_rating", "quality_rating",
-    "staffing_rating", "rn_staffing_rating", "abuse_icon",
+    "ccn",
+    "facility_name",
+    "provider_state",
+    "overall_rating",
+    "health_inspection_rating",
+    "quality_rating",
+    "staffing_rating",
+    "rn_staffing_rating",
+    "abuse_icon",
     "total_weighted_health_survey_score",
-    "total_number_of_penalties", "total_fine_amount", "snapshot_date",
+    "total_number_of_penalties",
+    "total_fine_amount",
+    "snapshot_date",
 ]
 
 
@@ -66,8 +74,14 @@ def transform_five_star(df: pd.DataFrame, snapshot_date: date) -> pd.DataFrame:
     if "provider_state" in df.columns:
         df["provider_state"] = df["provider_state"].astype(str).str.strip().str.upper()
 
-    for col in ("overall_rating", "health_inspection_rating", "quality_rating",
-                "staffing_rating", "rn_staffing_rating", "total_number_of_penalties"):
+    for col in (
+        "overall_rating",
+        "health_inspection_rating",
+        "quality_rating",
+        "staffing_rating",
+        "rn_staffing_rating",
+        "total_number_of_penalties",
+    ):
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors="coerce").astype("Int64")
 

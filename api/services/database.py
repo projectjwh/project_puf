@@ -7,7 +7,6 @@ Query routing strategy:
 Both engines are initialized at startup and shared via FastAPI dependency injection.
 """
 
-from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
 
@@ -28,7 +27,7 @@ def get_pg_engine() -> Engine:
     global _pg_engine
     if _pg_engine is None:
         db = get_database_settings()
-        url = f"postgresql://{db.user}:{db.password}@{db.host}:{db.port}/{db.name}"
+        url = f"postgresql://{db.user}:{db.password}@{db.host}:{db.port}/{db.database}"
         _pg_engine = create_engine(
             url,
             poolclass=QueuePool,
@@ -65,7 +64,7 @@ def query_pg(sql: str, params: dict[str, Any] | None = None) -> list[dict]:
     with engine.connect() as conn:
         result = conn.execute(text(sql), params or {})
         columns = list(result.keys())
-        return [dict(zip(columns, row)) for row in result.fetchall()]
+        return [dict(zip(columns, row, strict=False)) for row in result.fetchall()]
 
 
 def query_pg_df(sql: str, params: dict[str, Any] | None = None) -> pd.DataFrame:
@@ -79,7 +78,7 @@ def query_duckdb(sql: str) -> list[dict]:
     conn = get_duckdb_conn()
     result = conn.execute(sql)
     columns = [desc[0] for desc in result.description]
-    return [dict(zip(columns, row)) for row in result.fetchall()]
+    return [dict(zip(columns, row, strict=False)) for row in result.fetchall()]
 
 
 def query_duckdb_df(sql: str) -> pd.DataFrame:

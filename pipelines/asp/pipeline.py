@@ -34,8 +34,12 @@ COLUMN_MAPPING = {
 }
 
 OUTPUT_COLUMNS = [
-    "hcpcs_code", "short_description", "payment_limit",
-    "dosage_form", "quarter", "year",
+    "hcpcs_code",
+    "short_description",
+    "payment_limit",
+    "dosage_form",
+    "quarter",
+    "year",
 ]
 
 
