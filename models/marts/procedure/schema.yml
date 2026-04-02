@@ -1,0 +1,74 @@
+version: 2
+
+models:
+  - name: mart_procedure__utilization_trends
+    description: >
+      Procedure-level utilization trends with RVU complexity weighting.
+      One row per HCPCS code per data_year. Includes YOY change and
+      place-of-service mix. Indexed for procedure lookup and top-N queries.
+    columns:
+      - name: hcpcs_code
+        description: "HCPCS/CPT procedure code"
+        data_tests:
+          - not_null
+      - name: data_year
+        data_tests:
+          - not_null
+      - name: total_services
+        description: "Total number of services rendered nationally"
+      - name: total_medicare_payment
+        description: "Total Medicare payments nationally"
+      - name: provider_count
+        description: "Distinct providers rendering this procedure"
+      - name: total_rvu
+        description: "Total RVU weight from fee schedule"
+      - name: total_rvu_volume
+        description: "Total services * total_rvu = aggregate RVU production"
+      - name: yoy_services_change_pct
+        description: "Year-over-year change in service volume (%)"
+      - name: yoy_payment_change_pct
+        description: "Year-over-year change in Medicare payments (%)"
+
+  - name: mart_procedure__price_variation
+    description: >
+      Price variation for same procedure across providers and states.
+      One row per HCPCS code per state per data_year. Includes distribution
+      statistics (min, max, p25, p75, stddev, coefficient of variation).
+    columns:
+      - name: hcpcs_code
+        description: "HCPCS/CPT procedure code"
+        data_tests:
+          - not_null
+      - name: provider_state
+        description: "2-letter state abbreviation"
+        data_tests:
+          - not_null
+      - name: data_year
+        data_tests:
+          - not_null
+      - name: avg_payment
+        description: "Average Medicare payment per service across providers"
+      - name: coefficient_of_variation
+        description: "stddev / mean -- higher = more price variation"
+
+  - name: mart_procedure__specialty_mix
+    description: >
+      Specialty distribution for each procedure. One row per HCPCS code per
+      specialty per data_year. Includes share of volume and payment,
+      ranked by service volume within each procedure.
+    columns:
+      - name: hcpcs_code
+        description: "HCPCS/CPT procedure code"
+        data_tests:
+          - not_null
+      - name: specialty_classification
+        description: "NUCC taxonomy classification"
+        data_tests:
+          - not_null
+      - name: data_year
+        data_tests:
+          - not_null
+      - name: services_share_pct
+        description: "This specialty's share of total services for this procedure (%)"
+      - name: specialty_rank
+        description: "Rank within procedure by service volume (1 = top specialty)"

@@ -81,3 +81,69 @@ models:
         description: "State actual per-capita / national actual per-capita"
       - name: standardized_spending_index
         description: "State standardized per-capita / national standardized per-capita"
+
+  - name: int_provider_quality
+    description: >
+      Facility-level quality composite from Five-Star ratings and Hospital Readmissions.
+      CCN-keyed; joins to provider profile at the mart layer via POS facilities.
+      Merges nursing home quality ratings with hospital readmission penalties.
+    columns:
+      - name: ccn
+        description: "6-digit CMS Certification Number"
+        data_tests:
+          - not_null
+      - name: facility_name
+        description: "Facility name from POS or source data"
+      - name: overall_rating
+        description: "Five-Star overall rating (1-5, nursing homes only)"
+      - name: has_readmission_penalty_risk
+        description: "True if facility scores worse than national on any readmission measure"
+      - name: five_star_quality_tier
+        description: "HIGH (4-5), MEDIUM (3), LOW (1-2) based on overall rating"
+      - name: readmission_quality_tier
+        description: "AT_RISK, ABOVE_AVERAGE, or AVERAGE based on readmission performance"
+
+  - name: int_procedure_utilization
+    description: >
+      Procedure-level utilization summary from Part B. Aggregates from
+      provider-service-line to procedure-year. Uses TOTALS (not averages)
+      for proper aggregation. Includes place-of-service mix.
+    columns:
+      - name: hcpcs_code
+        description: "HCPCS/CPT procedure code"
+        data_tests:
+          - not_null
+      - name: data_year
+        data_tests:
+          - not_null
+      - name: total_services
+        description: "Total number of services rendered nationally"
+      - name: total_medicare_payment
+        description: "Sum of all Medicare payments for this procedure-year"
+      - name: provider_count
+        description: "Distinct providers rendering this procedure"
+      - name: pct_office
+        description: "Percentage of services in office setting"
+      - name: pct_facility
+        description: "Percentage of services in facility setting"
+
+  - name: int_procedure_by_specialty
+    description: >
+      Procedure utilization broken out by provider specialty. Joins Part B
+      to int_providers for taxonomy classification. Enables specialty mix analysis.
+    columns:
+      - name: hcpcs_code
+        description: "HCPCS/CPT procedure code"
+        data_tests:
+          - not_null
+      - name: specialty_classification
+        description: "NUCC taxonomy classification from int_providers"
+        data_tests:
+          - not_null
+      - name: data_year
+        data_tests:
+          - not_null
+      - name: total_services
+        description: "Total services for this procedure-specialty-year"
+      - name: avg_payment_per_service
+        description: "Average Medicare payment per service"

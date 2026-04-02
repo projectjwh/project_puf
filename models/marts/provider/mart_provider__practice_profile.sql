@@ -22,6 +22,18 @@ with providers as (
     select * from {{ ref('int_providers') }}
 ),
 
+-- SCD summary from provider history snapshot
+provider_history as (
+    select
+        npi,
+        count(*) as provider_versions,
+        min(dbt_valid_from) as first_seen_date,
+        count(distinct practice_state) as state_changes,
+        count(distinct primary_taxonomy_code) as specialty_changes
+    from {{ ref('snp_provider_history') }}
+    group by npi
+),
+
 -- Latest year of Part B data per provider
 services as (
     select
@@ -121,8 +133,15 @@ select
     case when s.rendering_npi is not null then true else false end as has_part_b_data,
     case when rx.prescriber_npi is not null then true else false end as has_part_d_data,
 
+    -- SCD summary (from provider history snapshot)
+    coalesce(ph.provider_versions, 1) as provider_versions,
+    ph.first_seen_date,
+    coalesce(ph.state_changes, 1) as state_changes,
+    coalesce(ph.specialty_changes, 1) as specialty_changes,
+
     p._loaded_at
 
 from providers p
 left join services s on p.npi = s.rendering_npi
 left join prescriptions rx on p.npi = rx.prescriber_npi
+left join provider_history ph on p.npi = ph.npi

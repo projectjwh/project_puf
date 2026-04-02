@@ -1,11 +1,51 @@
-"""Provider endpoints — NPI lookup, search, by-specialty."""
+"""Provider endpoints — NPI lookup, search, by-specialty, comparison."""
 
 from fastapi import APIRouter, HTTPException, Query
 
-from api.schemas.providers import ProviderProfile, ProviderSearchResponse, ProviderSummary
+from api.schemas.providers import ProviderCompareResponse, ProviderProfile, ProviderSearchResponse, ProviderSummary
 from api.services.database import query_pg
 
 router = APIRouter()
+
+
+@router.get("/compare", response_model=ProviderCompareResponse)
+async def compare_providers(
+    npis: str = Query(..., description="Comma-separated NPIs (max 10)"),
+) -> ProviderCompareResponse:
+    """Compare multiple providers side by side. Max 10 NPIs."""
+    npi_list = [n.strip() for n in npis.split(",") if n.strip()]
+
+    if not npi_list:
+        raise HTTPException(status_code=400, detail="At least one NPI is required")
+    if len(npi_list) > 10:
+        raise HTTPException(status_code=400, detail="Maximum 10 NPIs allowed for comparison")
+
+    for npi in npi_list:
+        if not npi.isdigit() or len(npi) != 10:
+            raise HTTPException(status_code=400, detail=f"Invalid NPI: {npi}. Must be a 10-digit number")
+
+    # Build parameterized IN clause
+    placeholders = ", ".join(f":npi_{i}" for i in range(len(npi_list)))
+    params = {f"npi_{i}": npi for i, npi in enumerate(npi_list)}
+
+    rows = query_pg(
+        f"""
+        SELECT * FROM mart.mart_provider__practice_profile
+        WHERE npi IN ({placeholders})
+        """,
+        params,
+    )
+
+    providers = [ProviderProfile(**r) for r in rows]
+    found_npis = {p.npi for p in providers}
+    not_found = [n for n in npi_list if n not in found_npis]
+
+    return ProviderCompareResponse(
+        providers=providers,
+        requested=len(npi_list),
+        found=len(providers),
+        not_found=not_found,
+    )
 
 
 @router.get("/{npi}", response_model=ProviderProfile)

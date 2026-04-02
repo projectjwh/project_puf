@@ -88,34 +88,85 @@ def run(
     run_date: date | None = None,
     data_year: int | None = None,
 ) -> dict[str, int]:
+    """Execute the Hospital Readmissions pipeline."""
+    import time
+
+    from pipelines._common.catalog import (
+        complete_pipeline_run,
+        record_pipeline_failure,
+        record_pipeline_run,
+        update_data_freshness,
+    )
+    from pipelines._common.validate import apply_quarantine
+
     run_date = run_date or date.today()
     data_year = data_year or run_date.year - 1
     settings = get_pipeline_settings()
     results: dict[str, int] = {}
+    start_time = time.time()
+    file_hash = ""
 
-    log.info("readmissions_start", run_date=str(run_date), data_year=data_year)
+    run_id = record_pipeline_run("readmissions", run_date, data_year, stage="acquire")
 
-    if source_path:
-        data_file = source_path
-    else:
-        source_def = get_source("readmissions")
-        landing = resolve_landing_path("readmissions", run_date)
-        data_file = download_file(source_def.url, landing)
+    try:
+        log.info("readmissions_start", run_date=str(run_date), data_year=data_year)
 
-    df = pd.read_csv(data_file, dtype=str, low_memory=False)
-    df = df.rename(columns={k: v for k, v in COLUMN_MAPPING.items() if k in df.columns})
+        # Acquire
+        if source_path:
+            data_file = source_path
+        else:
+            source_def = get_source("readmissions")
+            landing = resolve_landing_path("readmissions", run_date)
+            data_file = download_file(source_def.url, landing)
+            from pipelines._common.acquire import compute_hash
 
-    report = validate_readmissions(df)
-    report.raise_if_blocked()
-    df = transform_readmissions(df, data_year)
+            file_hash = compute_hash(data_file)
 
-    parquet_path = PROJECT_ROOT / settings.storage.processed_base / "readmissions" / "readmissions.parquet"
-    write_parquet(df, parquet_path)
-    results["readmissions_parquet"] = len(df)
+        # Read
+        df = pd.read_csv(data_file, dtype=str, low_memory=False)
+        df = df.rename(columns={k: v for k, v in COLUMN_MAPPING.items() if k in df.columns})
+        log.info("csv_read", rows=len(df), columns=len(df.columns))
 
-    out_cols = [c for c in STAGING_COLUMNS if c in df.columns]
-    rows = copy_dataframe_to_pg(df[out_cols], "stg_cms__readmissions", "staging", if_exists="replace")
-    results["stg_readmissions"] = rows
+        # Validate
+        report = validate_readmissions(df)
+        report.run_id = run_id
+        report.raise_if_blocked()
+        report.persist()
+        log.info("validation_passed", warnings=len(report.warnings))
 
-    log.info("readmissions_complete", **results)
-    return results
+        # Apply quarantine
+        df = apply_quarantine(df, report, run_id)
+
+        # Transform
+        df = transform_readmissions(df, data_year)
+        results["readmissions_rows"] = len(df)
+
+        # Write Parquet
+        parquet_path = PROJECT_ROOT / settings.storage.processed_base / "readmissions" / "readmissions.parquet"
+        write_parquet(df, parquet_path)
+        results["readmissions_parquet"] = len(df)
+
+        # Load to staging (PostgreSQL)
+        out_cols = [c for c in STAGING_COLUMNS if c in df.columns]
+        rows = copy_dataframe_to_pg(df[out_cols], "stg_cms__readmissions", "staging", if_exists="replace")
+        results["stg_readmissions"] = rows
+
+        duration = time.time() - start_time
+        complete_pipeline_run(
+            run_id,
+            "success",
+            rows_processed=results.get("readmissions_rows", 0),
+            rows_loaded=rows,
+            file_hash=file_hash,
+            duration_seconds=duration,
+        )
+        update_data_freshness("readmissions", data_year, file_hash)
+
+        log.info("readmissions_complete", **results)
+        return results
+
+    except Exception as e:
+        duration = time.time() - start_time
+        complete_pipeline_run(run_id, "failed", error_message=str(e), duration_seconds=duration)
+        record_pipeline_failure(run_id, e)
+        raise

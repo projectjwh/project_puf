@@ -30,3 +30,55 @@ models:
         description: "True if provider has Part B utilization data"
       - name: has_part_d_data
         description: "True if provider has Part D prescribing data"
+      - name: provider_versions
+        description: "Count of historical SCD records for this provider (from snapshot)"
+      - name: first_seen_date
+        description: "Earliest dbt_valid_from date across all provider snapshot versions"
+      - name: state_changes
+        description: "Count of distinct practice_state values across all provider versions"
+      - name: specialty_changes
+        description: "Count of distinct primary_taxonomy_code values across all provider versions"
+
+  - name: mart_provider__historical_profile
+    description: >
+      Historized provider profile with SCD Type 2 versioning from dbt snapshots.
+      One row per NPI x validity period. Tracks taxonomy changes, state changes,
+      and active/inactive transitions with version numbering and change flags.
+    columns:
+      - name: npi
+        description: "10-digit National Provider Identifier"
+        data_tests:
+          - not_null
+      - name: dbt_valid_from
+        description: "Start of this version's validity period"
+        data_tests:
+          - not_null
+      - name: dbt_valid_to
+        description: "End of this version's validity period (null if current)"
+      - name: dbt_scd_id
+        description: "Unique identifier for this SCD record"
+        data_tests:
+          - unique
+          - not_null
+      - name: version_number
+        description: "Sequential version number per NPI (1 = first seen)"
+      - name: is_current
+        description: "True if this is the currently active version (dbt_valid_to is null)"
+      - name: days_in_version
+        description: "Number of days this version has been or was active"
+      - name: previous_state
+        description: "Practice state from the previous version (null for version 1)"
+      - name: previous_taxonomy
+        description: "Primary taxonomy code from the previous version (null for version 1)"
+      - name: is_state_change
+        description: "True if practice_state differs from the previous version"
+      - name: is_taxonomy_change
+        description: "True if primary_taxonomy_code differs from the previous version"
+      - name: practice_state
+        description: "2-letter state abbreviation for this version"
+      - name: primary_taxonomy_code
+        description: "NUCC primary taxonomy code for this version"
+      - name: specialty_classification
+        description: "NUCC classification description (e.g., Internal Medicine)"
+      - name: is_active
+        description: "Whether the provider was active during this version"

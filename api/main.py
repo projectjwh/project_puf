@@ -19,6 +19,7 @@ from api.routes import (
     national,
     opioid,
     postacute,
+    procedures,
     providers,
     specialties,
 )
@@ -65,3 +66,4 @@ app.include_router(catalog.router, prefix="/api/v1/catalog", tags=["catalog"])
 app.include_router(hospitals.router, prefix="/api/v1/hospitals", tags=["hospitals"])
 app.include_router(drugs.router, prefix="/api/v1/drugs", tags=["drugs"])
 app.include_router(postacute.router, prefix="/api/v1/postacute", tags=["postacute"])
+app.include_router(procedures.router, prefix="/api/v1/procedures", tags=["procedures"])

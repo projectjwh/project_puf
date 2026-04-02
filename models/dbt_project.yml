@@ -8,6 +8,7 @@ model-paths: ["."]
 test-paths: ["."]
 seed-paths: ["seeds"]
 macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
 target-path: "target"
 clean-targets: ["target", "dbt_packages"]
 
@@ -44,6 +45,8 @@ models:
         +tags: ["postacute"]
       ma:
         +tags: ["medicare_advantage"]
+      procedure:
+        +tags: ["procedure"]
       quality:
         +tags: ["quality"]
 

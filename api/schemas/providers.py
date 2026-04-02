@@ -86,3 +86,12 @@ class ProviderSearchResponse(BaseModel):
     page: int
     page_size: int
     has_next: bool
+
+
+class ProviderCompareResponse(BaseModel):
+    """Response for provider comparison endpoint."""
+
+    providers: list[ProviderProfile]
+    requested: int
+    found: int
+    not_found: list[str] = []
