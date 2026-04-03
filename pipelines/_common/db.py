@@ -3,6 +3,7 @@
 Provides connection factories, bulk COPY operations, and DuckDB Parquet reading.
 """
 
+import re
 from collections.abc import Generator
 from contextlib import contextmanager
 from pathlib import Path
@@ -20,21 +21,28 @@ from pipelines._common.logging import get_logger
 
 log = get_logger(stage="db")
 
+_SAFE_IDENTIFIER = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]*$")
+
 
 # ---------------------------------------------------------------------------
 # PostgreSQL
 # ---------------------------------------------------------------------------
 
 
+_engines: dict[bool, Engine] = {}
+
+
 def get_pg_engine(use_pgbouncer: bool = True) -> Engine:
-    """Create a SQLAlchemy engine for PostgreSQL.
+    """Get or create a SQLAlchemy engine for PostgreSQL (singleton per mode).
 
     Args:
         use_pgbouncer: If True, connect through PgBouncer (recommended for apps).
     """
-    settings = get_database_settings()
-    dsn = settings.pgbouncer_dsn if use_pgbouncer else settings.dsn
-    return create_engine(dsn, pool_pre_ping=True)
+    if use_pgbouncer not in _engines:
+        settings = get_database_settings()
+        dsn = settings.pgbouncer_dsn if use_pgbouncer else settings.dsn
+        _engines[use_pgbouncer] = create_engine(dsn, pool_pre_ping=True)
+    return _engines[use_pgbouncer]
 
 
 @contextmanager
@@ -89,6 +97,12 @@ def copy_dataframe_to_pg(
     Returns the number of rows actually loaded (may be < len(df) if chunks failed).
     """
     engine = get_pg_engine(use_pgbouncer=False)
+
+    # Validate identifiers to prevent SQL injection
+    if not _SAFE_IDENTIFIER.match(table_name):
+        raise ValueError(f"Unsafe table name: {table_name!r}")
+    if not _SAFE_IDENTIFIER.match(schema):
+        raise ValueError(f"Unsafe schema name: {schema!r}")
 
     if len(df) < 1_000_000:
         df.to_sql(

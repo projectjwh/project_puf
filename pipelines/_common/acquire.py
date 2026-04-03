@@ -53,21 +53,27 @@ def _do_download(
     timeout: int,
     chunk_size: int,
 ) -> int:
-    """Execute a single download attempt. Raises on failure."""
+    """Execute a single download attempt. Cleans up partial file on failure."""
     downloaded_bytes = 0
-    with httpx.stream(
-        "GET",
-        url,
-        timeout=timeout,
-        follow_redirects=True,
-        headers={"User-Agent": "ProjectPUF/0.1 (public-healthcare-data-research)"},
-    ) as response:
-        response.raise_for_status()
+    try:
+        with httpx.stream(
+            "GET",
+            url,
+            timeout=timeout,
+            follow_redirects=True,
+            headers={"User-Agent": "ProjectPUF/0.1 (public-healthcare-data-research)"},
+        ) as response:
+            response.raise_for_status()
 
-        with open(dest_path, "wb") as f:
-            for chunk in response.iter_bytes(chunk_size=chunk_size):
-                f.write(chunk)
-                downloaded_bytes += len(chunk)
+            with open(dest_path, "wb") as f:
+                for chunk in response.iter_bytes(chunk_size=chunk_size):
+                    f.write(chunk)
+                    downloaded_bytes += len(chunk)
+    except Exception:
+        # Clean up partial file to prevent downstream processing of incomplete data
+        if dest_path.exists():
+            dest_path.unlink(missing_ok=True)
+        raise
 
     return downloaded_bytes
 

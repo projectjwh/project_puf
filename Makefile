@@ -19,8 +19,9 @@ down: ## Stop all Docker services
 logs: ## Tail Docker service logs
 	docker compose -f config/docker-compose.yml logs -f
 
-migrate: ## Run Alembic migrations to head
+migrate: ## Run Alembic migrations to head + seed catalog
 	alembic -c pipelines/alembic/alembic.ini upgrade head
+	python scripts/seed_catalog_sources.py
 
 migrate-down: ## Rollback last Alembic migration
 	alembic -c pipelines/alembic/alembic.ini downgrade -1

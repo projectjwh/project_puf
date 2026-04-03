@@ -184,7 +184,7 @@ def run(
     data_year: int | None = None,
 ) -> dict[str, int]:
     run_date = run_date or date.today()
-    data_year = data_year or run_date.year - 2
+    data_year = data_year or run_date.year - 2  # TODO: replace with compute_data_year()
     settings = get_pipeline_settings()
     results: dict[str, int] = {}
 
