@@ -24,7 +24,7 @@ Public Healthcare Data Repository -- an interactive platform for accessing, visu
                           |
                     dbt (staging -> intermediate -> mart)
                           |
-                    FastAPI (28 endpoints)
+                    FastAPI (32 endpoints)
                           |
                     Next.js (8 pages)
 ```

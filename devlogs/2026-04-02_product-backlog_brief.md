@@ -10,10 +10,10 @@
 
 | # | Domain | Priority | Effort | Status |
 |---|--------|----------|--------|--------|
-| 1 | UniProvDB (SCD provider history) | P0 | 3d | Planned |
+| 1 | UniProvDB (SCD provider history) | P0 | 3d | **COMPLETE** (2026-04-02) |
 | 2 | Population Analytics (public aggregates) | P1 | 4d | Planned |
-| 3 | Provider Profiles+ (quality + cost overlay) | P0 | 4d | Planned |
-| 4 | Procedure Analytics (HCPCS-level marts) | P0 | 3d | Planned |
+| 3 | Provider Profiles+ (quality + cost overlay) | P0 | 4d | **COMPLETE** (2026-04-02) |
+| 4 | Procedure Analytics (HCPCS-level marts) | P0 | 3d | **COMPLETE** (2026-04-02) |
 | 5 | County Geography (sub-state variation) | P1 | 2d | Planned |
 
 ## Key Decision: Beneficiary Data Scope

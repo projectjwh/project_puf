@@ -11,12 +11,18 @@ Key domains: providers, beneficiaries, utilization, geographic variation, hospit
 **Phase 1 complete** (2026-03-04). Delivered:
 - 48 data sources configured (`config/sources.yaml`), 45+ pipeline modules
 - 47 dbt models (16 staging, 11 intermediate, 20+ marts)
-- 11 FastAPI route modules, 28 endpoints
+- 12 FastAPI route modules, 32 endpoints
 - 8 Next.js pages with 5 shared components
-- 10 Alembic migrations, 258 passing tests
-- 12 technical design docs, 14 source knowledge base entries
+- 12 Alembic migrations, 484 passing tests
+- 15 technical design docs, 14 source knowledge base entries
+- GitHub Actions CI (lint + typecheck + test + integration)
+- 15 subagents (3 executive, 3 antagonist, 9 operational)
 
-**Phase 2 scope**: Observability, data contracts, CI/CD, live data ingestion, Prefect orchestration for Tier 2.
+**Phase 2 COMPLETE**: Pipeline integrity (7 sprints), analytical domains (UniProvDB SCD, Procedure Analytics, Provider Profiles+), data contracts, Prefect orchestration, statistical baselines, integration tests.
+
+**Phase 2B planned**: Population Analytics (Domain 2), County Geography (Domain 5).
+
+**Phase 3 planned**: Tier 2 source expansion, Prometheus/Grafana dashboards, chaos testing, DuckDB activation.
 
 ## Technology Stack
 

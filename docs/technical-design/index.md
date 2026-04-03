@@ -72,6 +72,7 @@ Full diagram: [`diagrams/system-architecture.d2`](diagrams/system-architecture.d
 | 12 | [Source Inventory](12-source-inventory.md) | All 48 sources across 11 categories |
 | 13 | [Pipeline Integrity](13-pipeline-integrity.md) | Catalog tracking, validation persistence, quarantine, download resilience |
 | 14 | [Analytical Domains](14-analytical-domains.md) | UniProvDB SCD, Provider Profiles+, Procedure Analytics, Population, Geography |
+| 15 | [Data Inventory](15-data-inventory.md) | All 48 sources, 53 dbt models, join topology, analytical questions |
 | — | [Appendices](appendices.md) | Directory tree, naming conventions, glossary |
 
 ---

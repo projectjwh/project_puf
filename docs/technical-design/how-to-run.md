@@ -182,9 +182,10 @@ Alembic reads `PUF_DB_PASSWORD` via `%(PUF_DB_PASSWORD)s` interpolation in `alem
 # PowerShell — set env var for this session
 $env:PUF_DB_PASSWORD = "puf_dev_password"
 
-# Run all 10 migrations
+# Run all 12 migrations + seed catalog
 alembic -c pipelines/alembic/alembic.ini upgrade head
-# Or: make migrate
+python scripts/seed_catalog_sources.py
+# Or: make migrate (does both)
 ```
 
 ```cmd
@@ -197,14 +198,16 @@ alembic -c pipelines/alembic/alembic.ini upgrade head
 This creates:
 - 7 database schemas (`catalog`, `reference`, `staging`, `intermediate`, `mart`, `metadata`, `raw`)
 - 4 RBAC roles (`puf_pipeline`, `puf_dbt`, `puf_api`, `puf_admin`)
-- 7 catalog tables, reference tables, staging tables, and all Tier 2 tables
+- 8 catalog tables (sources, pipeline_runs, pipeline_failures, validation_runs, quarantine_rows, data_freshness, source_columns, metric_baselines)
+- Reference tables, staging tables, and all Tier 2 tables
+- Seeds catalog.sources with all 48 source definitions
 
 Verify:
 
 ```powershell
 alembic -c pipelines/alembic/alembic.ini current
 # Or: make migrate-status
-# Should show: head at revision 010
+# Should show: head at revision 012
 ```
 
 ### 6. Verify the Stack
@@ -319,7 +322,7 @@ pytest -m "not integration" --cov=pipelines --cov=flows --cov=api --cov-report=t
 # Or: make test-cov
 ```
 
-Current status: 258 tests, 258 passed, 11 skipped.
+Current status: 484 tests, 484 passed, 2 skipped.
 
 ### Code Quality
 
@@ -555,7 +558,9 @@ Run `make help` to see all targets. If you don't have `make` installed, use the 
 | `make up` | Start Docker services | `docker compose -f config/docker-compose.yml up -d` |
 | `make down` | Stop Docker services | `docker compose -f config/docker-compose.yml down` |
 | `make logs` | Tail Docker logs | `docker compose -f config/docker-compose.yml logs -f` |
-| `make migrate` | Run Alembic to head | `alembic -c pipelines/alembic/alembic.ini upgrade head` |
+| `make migrate` | Run Alembic + seed catalog | `alembic -c pipelines/alembic/alembic.ini upgrade head` then `python scripts/seed_catalog_sources.py` |
+| `make seed-catalog` | Seed catalog.sources | `python scripts/seed_catalog_sources.py` |
+| `make deploy` | Serve Prefect deployments | `python -m flows.deploy` |
 | `make migrate-down` | Rollback one migration | `alembic -c pipelines/alembic/alembic.ini downgrade -1` |
 | `make migrate-status` | Show migration status | `alembic -c pipelines/alembic/alembic.ini current` |
 | `make test` | Run unit tests | `pytest -m "not integration" -v` |
